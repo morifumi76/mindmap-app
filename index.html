@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>シンプルマインドマップツール</title>
+    <title>マインドマップ</title>
     <style>
         /* ========================================
            CSS Variables & Reset
@@ -12,12 +12,11 @@
             --primary-color: #4a90d9;
             --primary-hover: #357abd;
             --bg-color: #f5f7fa;
-            --toolbar-bg: #ffffff;
             --node-bg: #ffffff;
             --node-border: #4a90d9;
             --node-selected: #e3f2fd;
             --text-color: #333333;
-            --line-color: #666666;
+            --line-color: #999999;
             --shadow: 0 2px 8px rgba(0,0,0,0.1);
             --font-family: 'Meiryo UI', 'メイリオ', Meiryo, sans-serif;
         }
@@ -28,266 +27,26 @@
             box-sizing: border-box;
         }
 
-        body {
+        html, body {
             font-family: var(--font-family);
             background: var(--bg-color);
             overflow: hidden;
-            height: 100vh;
-            width: 100vw;
+            height: 100%;
+            width: 100%;
         }
 
         /* ========================================
-           Toolbar Styles
-           ======================================== */
-        .toolbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 50px;
-            background: var(--toolbar-bg);
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
-            gap: 8px;
-            z-index: 1000;
-        }
-
-        .toolbar-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-right: 16px;
-        }
-
-        .toolbar-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: white;
-            color: var(--text-color);
-            font-family: var(--font-family);
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .toolbar-btn:hover {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .toolbar-btn:active {
-            transform: scale(0.98);
-        }
-
-        .toolbar-separator {
-            width: 1px;
-            height: 30px;
-            background: #ddd;
-            margin: 0 8px;
-        }
-
-        .toolbar-hint {
-            margin-left: auto;
-            font-size: 12px;
-            color: #888;
-        }
-
-        /* ========================================
-           Style Dropdown
-           ======================================== */
-        .style-dropdown-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-
-        .style-dropdown-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: white;
-            color: var(--text-color);
-            font-family: var(--font-family);
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .style-dropdown-btn:hover {
-            background: #f5f5f5;
-            border-color: var(--primary-color);
-        }
-
-        .style-dropdown-btn.active {
-            background: #e3f2fd;
-            border-color: var(--primary-color);
-        }
-
-        .color-indicator {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        .line-indicator {
-            width: 20px;
-            height: 4px;
-            background: var(--line-color);
-            border-radius: 2px;
-        }
-
-        .grayout-indicator {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            background: #e0e0e0;
-            border: 1px solid #bdbdbd;
-        }
-
-        .style-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            margin-top: 4px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            padding: 12px;
-            z-index: 1500;
-            display: none;
-            min-width: 200px;
-        }
-
-        .style-dropdown.active {
-            display: block;
-        }
-
-        .style-dropdown-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #666;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-        }
-
-        .color-presets {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        .color-preset {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .color-preset:hover {
-            transform: scale(1.1);
-            border-color: var(--primary-color);
-        }
-
-        .color-preset.selected {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.3);
-        }
-
-        .color-picker-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding-top: 8px;
-            border-top: 1px solid #eee;
-        }
-
-        .color-picker-label {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .color-picker-input {
-            width: 40px;
-            height: 28px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 2px;
-        }
-
-        .color-picker-input::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-
-        .color-picker-input::-webkit-color-swatch {
-            border: none;
-            border-radius: 2px;
-        }
-
-        .line-presets {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .line-preset {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            padding: 8px 12px;
-            border: 2px solid transparent;
-            border-radius: 6px;
-            background: #f5f5f5;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .line-preset:hover {
-            background: #e3f2fd;
-        }
-
-        .line-preset.selected {
-            border-color: var(--primary-color);
-            background: #e3f2fd;
-        }
-
-        .line-preview {
-            width: 40px;
-            border-radius: 2px;
-        }
-
-        .line-preset-label {
-            font-size: 11px;
-            color: #666;
-        }
-
-        /* ========================================
-           Canvas Container
+           Canvas Container (Full Screen - No Toolbar)
            ======================================== */
         .canvas-container {
             position: fixed;
-            top: 50px;
+            top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             overflow: hidden;
             background: var(--bg-color);
-            background-image: 
+            background-image:
                 radial-gradient(circle, #ddd 1px, transparent 1px);
             background-size: 20px 20px;
         }
@@ -296,7 +55,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            cursor: grab;
+            cursor: default;
         }
 
         .canvas.panning {
@@ -319,23 +78,7 @@
             height: 10000px;
             overflow: visible;
             transform: translate(-5000px, -5000px);
-        }
-        
-        .link-group {
-            pointer-events: auto;
-        }
-        
-        .link-group:hover .link-line {
-            stroke-width: 3px;
-        }
-        
-        .dots-svg {
-            z-index: 100;
             pointer-events: none;
-        }
-        
-        .dot-group {
-            pointer-events: auto;
         }
 
         .connection-line {
@@ -344,54 +87,6 @@
             stroke-width: 2;
             stroke-linecap: round;
             pointer-events: none;
-        }
-
-        .link-line {
-            fill: none;
-            stroke: #e53935;
-            stroke-width: 2;
-            stroke-dasharray: 6, 4;
-            stroke-linecap: round;
-        }
-
-        .link-line-preview {
-            fill: none;
-            stroke: #e53935;
-            stroke-width: 2;
-            stroke-dasharray: 6, 4;
-            stroke-linecap: round;
-            opacity: 0.6;
-        }
-
-        .node.link-target {
-            box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.4);
-        }
-
-        .node.dragging {
-            opacity: 0.5;
-            z-index: 1000;
-        }
-
-        .node.drag-over-child {
-            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.5);
-            border-color: #4caf50;
-        }
-
-        .node.drag-over-before {
-            border-top: 4px solid #2196f3;
-        }
-
-        .node.drag-over-after {
-            border-bottom: 4px solid #2196f3;
-        }
-
-        .drag-ghost {
-            position: fixed;
-            pointer-events: none;
-            z-index: 2000;
-            opacity: 0.8;
-            transform: rotate(2deg);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
 
         /* ========================================
@@ -408,8 +103,10 @@
             box-shadow: var(--shadow);
             cursor: pointer;
             user-select: none;
-            transition: box-shadow 0.2s, transform 0.2s;
-            white-space: nowrap;
+            transition: box-shadow 0.2s;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .node:hover {
@@ -432,10 +129,30 @@
             cursor: text;
         }
 
+        .node.dragging {
+            opacity: 0.4;
+            z-index: 1000;
+        }
+
+        .node.drag-over-child {
+            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.5);
+            border-color: #4caf50;
+        }
+
+        .node.drag-over-before {
+            border-top: 4px solid #2196f3;
+        }
+
+        .node.drag-over-after {
+            border-bottom: 4px solid #2196f3;
+        }
+
         .node-text {
             outline: none;
             min-width: 50px;
-            display: inline-block;
+            display: block;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .node-text[contenteditable="true"] {
@@ -447,10 +164,101 @@
         }
 
         /* ========================================
-           Modal Styles
+           Drag Ghost
            ======================================== */
-        .modal-overlay {
+        .drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 2000;
+            opacity: 0.8;
+            transform: rotate(2deg);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        /* ========================================
+           Lasso Selection Rectangle
+           ======================================== */
+        .lasso-rect {
+            position: fixed;
+            border: 2px dashed var(--primary-color);
+            background: rgba(74, 144, 217, 0.08);
+            pointer-events: none;
+            z-index: 900;
             display: none;
+        }
+
+        /* ========================================
+           Copy Button (Floating, Bottom-Right)
+           ======================================== */
+        .copy-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 500;
+            background: #ffffff;
+            padding: 10px 14px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border: 1px solid #e0e0e0;
+        }
+
+        .copy-panel select {
+            font-family: var(--font-family);
+            font-size: 13px;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f9f9f9;
+            color: var(--text-color);
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .copy-panel select:focus {
+            border-color: var(--primary-color);
+        }
+
+        .copy-btn, .preview-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: white;
+            font-family: var(--font-family);
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .preview-btn {
+            background: #6c757d;
+        }
+
+        .preview-btn:hover {
+            background: #5a6268;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .copy-btn:active, .preview-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* ========================================
+           Preview Modal
+           ======================================== */
+        .preview-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -458,188 +266,105 @@
             bottom: 0;
             background: rgba(0,0,0,0.5);
             z-index: 2000;
-            justify-content: center;
+            display: none;
             align-items: center;
+            justify-content: center;
         }
 
-        .modal-overlay.active {
+        .preview-overlay.show {
             display: flex;
         }
 
-        .modal {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            max-width: 600px;
+        .preview-modal {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 90%;
+            max-width: 680px;
             max-height: 80vh;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        .modal-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #eee;
+        .preview-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #f8f9fa;
         }
 
-        .modal-title {
-            font-size: 18px;
-            font-weight: bold;
+        .preview-header h3 {
+            font-size: 15px;
             color: var(--text-color);
+            font-family: var(--font-family);
         }
 
-        .modal-close {
+        .preview-header-btns {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview-copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .preview-copy-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .preview-close-btn {
             width: 32px;
             height: 32px;
             border: none;
-            background: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #888;
             border-radius: 50%;
+            background: transparent;
+            color: #666;
+            font-size: 20px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.2s;
         }
 
-        .modal-close:hover {
-            background: #f0f0f0;
-            color: #333;
+        .preview-close-btn:hover {
+            background: #e0e0e0;
         }
 
-        .modal-body {
+        .preview-body {
             padding: 20px;
             overflow-y: auto;
             flex: 1;
         }
 
-        .modal-footer {
-            padding: 16px 20px;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .modal-btn {
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-family: var(--font-family);
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .modal-btn-primary {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-        }
-
-        .modal-btn-primary:hover {
-            background: var(--primary-hover);
-        }
-
-        .modal-btn-secondary {
-            background: white;
+        .preview-body pre {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.7;
             color: var(--text-color);
-            border: 1px solid #ddd;
-        }
-
-        .modal-btn-secondary:hover {
-            background: #f5f5f5;
-        }
-
-        .modal-textarea {
-            width: 100%;
-            height: 300px;
-            padding: 12px;
-            border: 1px solid #ddd;
+            background: #f6f8fa;
+            border: 1px solid #e1e4e8;
             border-radius: 8px;
-            font-family: var(--font-family);
-            font-size: 13px;
-            line-height: 1.6;
-            resize: vertical;
-        }
-
-        .modal-textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.1);
-        }
-
-        /* ========================================
-           Zoom Controls
-           ======================================== */
-        .zoom-controls {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            gap: 8px;
-            z-index: 100;
-        }
-
-        .zoom-btn {
-            width: 40px;
-            height: 40px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--shadow);
-            transition: all 0.2s;
-        }
-
-        .zoom-btn:hover {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .zoom-level {
-            padding: 0 12px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 13px;
-            box-shadow: var(--shadow);
-        }
-
-        /* ========================================
-           Keyboard Shortcuts Help
-           ======================================== */
-        .shortcuts-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .shortcut-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background: #f9f9f9;
-            border-radius: 6px;
-        }
-
-        .shortcut-key {
-            font-family: monospace;
-            background: #e8e8e8;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 16px 20px;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 0;
         }
 
         /* ========================================
@@ -658,6 +383,7 @@
             z-index: 3000;
             opacity: 0;
             transition: all 0.3s;
+            pointer-events: none;
         }
 
         .toast.show {
@@ -667,339 +393,78 @@
     </style>
 </head>
 <body>
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <span class="toolbar-title">🧠 マインドマップ</span>
-        
-        <button class="toolbar-btn" onclick="exportText()" title="プレーンテキストとして出力">
-            📄 テキスト出力
-        </button>
-        
-        <button class="toolbar-btn" onclick="showImportModal()" title="テキストから読み込み">
-            📥 テキスト読込
-        </button>
-        
-        <div class="toolbar-separator"></div>
-        
-        <button class="toolbar-btn" onclick="undo()" title="元に戻す (Cmd+Z)">
-            ↩️ 戻す
-        </button>
-        
-        <button class="toolbar-btn" onclick="redo()" title="やり直し (Cmd+Y)">
-            ↪️ やり直し
-        </button>
-        
-        <div class="toolbar-separator"></div>
-        
-        <!-- ノード背景色 -->
-        <div class="style-dropdown-wrapper">
-            <button class="style-dropdown-btn" onclick="toggleStyleDropdown('bgColor')" title="ノード背景色 (Cmd+Opt+Y)">
-                <span class="color-indicator" id="bgColorIndicator" style="background: #fff;"></span>
-                背景色
-            </button>
-            <div class="style-dropdown" id="bgColorDropdown">
-                <div class="style-dropdown-title">プリセット</div>
-                <div class="color-presets" id="bgColorPresets">
-                    <div class="color-preset" style="background: #ffffff;" data-color="#ffffff" onclick="setBgColor('#ffffff')" title="白"></div>
-                    <div class="color-preset" style="background: #fff9c4;" data-color="#fff9c4" onclick="setBgColor('#fff9c4')" title="黄色"></div>
-                    <div class="color-preset" style="background: #e0f7fa;" data-color="#e0f7fa" onclick="setBgColor('#e0f7fa')" title="水色"></div>
-                    <div class="color-preset" style="background: #f3e5f5;" data-color="#f3e5f5" onclick="setBgColor('#f3e5f5')" title="紫"></div>
-                    <div class="color-preset" style="background: #e8f5e9;" data-color="#e8f5e9" onclick="setBgColor('#e8f5e9')" title="緑"></div>
-                    <div class="color-preset" style="background: #ffebee;" data-color="#ffebee" onclick="setBgColor('#ffebee')" title="赤"></div>
-                    <div class="color-preset" style="background: #fff3e0;" data-color="#fff3e0" onclick="setBgColor('#fff3e0')" title="オレンジ"></div>
-                    <div class="color-preset" style="background: #e0e0e0;" data-color="#e0e0e0" onclick="setBgColor('#e0e0e0')" title="グレー"></div>
-                </div>
-                <div class="color-picker-row">
-                    <span class="color-picker-label">カスタム:</span>
-                    <input type="color" class="color-picker-input" id="bgColorPicker" value="#ffffff" onchange="setBgColor(this.value)">
-                </div>
-            </div>
-        </div>
-        
-        <!-- ノード文字色 -->
-        <div class="style-dropdown-wrapper">
-            <button class="style-dropdown-btn" onclick="toggleStyleDropdown('textColor')" title="ノード文字色 (Cmd+Opt+A)">
-                <span class="color-indicator" id="textColorIndicator" style="background: #333;"></span>
-                文字色
-            </button>
-            <div class="style-dropdown" id="textColorDropdown">
-                <div class="style-dropdown-title">プリセット</div>
-                <div class="color-presets" id="textColorPresets">
-                    <div class="color-preset" style="background: #333333;" data-color="#333333" onclick="setTextColor('#333333')" title="黒"></div>
-                    <div class="color-preset" style="background: #e53935;" data-color="#e53935" onclick="setTextColor('#e53935')" title="赤"></div>
-                    <div class="color-preset" style="background: #1e88e5;" data-color="#1e88e5" onclick="setTextColor('#1e88e5')" title="青"></div>
-                    <div class="color-preset" style="background: #43a047;" data-color="#43a047" onclick="setTextColor('#43a047')" title="緑"></div>
-                    <div class="color-preset" style="background: #fb8c00;" data-color="#fb8c00" onclick="setTextColor('#fb8c00')" title="オレンジ"></div>
-                    <div class="color-preset" style="background: #8e24aa;" data-color="#8e24aa" onclick="setTextColor('#8e24aa')" title="紫"></div>
-                    <div class="color-preset" style="background: #9e9e9e;" data-color="#9e9e9e" onclick="setTextColor('#9e9e9e')" title="グレー"></div>
-                    <div class="color-preset" style="background: #ffffff; border: 1px solid #ccc;" data-color="#ffffff" onclick="setTextColor('#ffffff')" title="白"></div>
-                </div>
-                <div class="color-picker-row">
-                    <span class="color-picker-label">カスタム:</span>
-                    <input type="color" class="color-picker-input" id="textColorPicker" value="#333333" onchange="setTextColor(this.value)">
-                </div>
-            </div>
-        </div>
-        
-        <!-- 接続線の色 -->
-        <div class="style-dropdown-wrapper">
-            <button class="style-dropdown-btn" onclick="toggleStyleDropdown('lineColor')" title="接続線の色">
-                <span class="line-indicator" id="lineColorIndicator"></span>
-                線色
-            </button>
-            <div class="style-dropdown" id="lineColorDropdown">
-                <div class="style-dropdown-title">プリセット</div>
-                <div class="color-presets" id="lineColorPresets">
-                    <div class="color-preset" style="background: #999999;" data-color="#999999" onclick="setLineColor('#999999')" title="グレー（デフォルト）"></div>
-                    <div class="color-preset" style="background: #333333;" data-color="#333333" onclick="setLineColor('#333333')" title="黒"></div>
-                    <div class="color-preset" style="background: #e53935;" data-color="#e53935" onclick="setLineColor('#e53935')" title="赤"></div>
-                    <div class="color-preset" style="background: #1e88e5;" data-color="#1e88e5" onclick="setLineColor('#1e88e5')" title="青"></div>
-                    <div class="color-preset" style="background: #43a047;" data-color="#43a047" onclick="setLineColor('#43a047')" title="緑"></div>
-                    <div class="color-preset" style="background: #fb8c00;" data-color="#fb8c00" onclick="setLineColor('#fb8c00')" title="オレンジ"></div>
-                    <div class="color-preset" style="background: #8e24aa;" data-color="#8e24aa" onclick="setLineColor('#8e24aa')" title="紫"></div>
-                    <div class="color-preset" style="background: #cccccc;" data-color="#cccccc" onclick="setLineColor('#cccccc')" title="薄いグレー"></div>
-                </div>
-                <div class="color-picker-row">
-                    <span class="color-picker-label">カスタム:</span>
-                    <input type="color" class="color-picker-input" id="lineColorPicker" value="#999999" onchange="setLineColor(this.value)">
-                </div>
-                <div class="style-dropdown-title" style="margin-top: 12px;">線の太さ</div>
-                <div class="line-presets">
-                    <div class="line-preset" onclick="setLineThickness(false)" id="lineThicknessNormal">
-                        <div class="line-preview" style="height: 2px; background: #999;"></div>
-                        <span class="line-preset-label">通常</span>
-                    </div>
-                    <div class="line-preset" onclick="setLineThickness(true)" id="lineThicknessThick">
-                        <div class="line-preview" style="height: 4px; background: #999;"></div>
-                        <span class="line-preset-label">太線</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- グレーアウト -->
-        <button class="style-dropdown-btn" onclick="toggleGrayout()" title="グレーアウト (Cmd+Opt+G)">
-            <span class="grayout-indicator" id="grayoutIndicator"></span>
-            グレー
-        </button>
-        
-        <div class="toolbar-separator"></div>
-        
-        <button class="toolbar-btn" onclick="showHelpModal()" title="ショートカット一覧">
-            ❓ ヘルプ
-        </button>
-        
-        <span class="toolbar-hint">ノードを選択してEnter（同階層追加）/ Tab（子追加）</span>
-    </div>
 
-    <!-- Canvas Container -->
+    <!-- Canvas Container (Full Screen) -->
     <div class="canvas-container" id="canvasContainer">
         <div class="canvas" id="canvas">
             <div class="canvas-inner" id="canvasInner">
                 <svg class="lines-svg" id="linesSvg"></svg>
-                <!-- 丸ポチ用の前面SVGレイヤー -->
-                <svg class="lines-svg dots-svg" id="dotsSvg"></svg>
             </div>
         </div>
     </div>
 
-    <!-- Zoom Controls -->
-    <div class="zoom-controls">
-        <button class="zoom-btn" onclick="zoomIn()" title="拡大">+</button>
-        <span class="zoom-level" id="zoomLevel">100%</span>
-        <button class="zoom-btn" onclick="zoomOut()" title="縮小">−</button>
-        <button class="zoom-btn" onclick="resetView()" title="リセット">⟲</button>
+    <!-- Copy Panel (Floating Bottom-Right) -->
+    <div class="copy-panel" id="copyPanel">
+        <select id="copyFormat" title="出力形式">
+            <option value="simple">シンプル</option>
+            <option value="hiyoko">ひよこモード 🐔</option>
+        </select>
+        <select id="copyBorder" title="罫線">
+            <option value="none">罫線なし</option>
+            <option value="border">罫線あり</option>
+        </select>
+        <button class="preview-btn" id="previewBtn" title="プレビュー">
+            👁 プレビュー
+        </button>
+        <button class="copy-btn" id="copyBtn" title="クリップボードにコピー">
+            📋 コピー
+        </button>
     </div>
 
-    <!-- Import Modal -->
-    <div class="modal-overlay" id="importModal">
-        <div class="modal">
-            <div class="modal-header">
-                <span class="modal-title">📥 テキストから読み込み</span>
-                <button class="modal-close" onclick="closeImportModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 12px; color: #666; font-size: 13px;">
-                    インデント（タブまたはスペース）で階層を表現したテキストを入力してください。<br>
-                    罫線記号（├─ └─）や絵文字は自動的に除去されます。
-                </p>
-                <textarea class="modal-textarea" id="importTextarea" placeholder="例：
-中心テーマ
-    子ノード1
-        孫ノード1-1
-        孫ノード1-2
-    子ノード2
-        孫ノード2-1"></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn modal-btn-secondary" onclick="closeImportModal()">キャンセル</button>
-                <button class="modal-btn modal-btn-primary" onclick="importText()">読み込み</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Export Modal -->
-    <div class="modal-overlay" id="exportModal">
-        <div class="modal">
-            <div class="modal-header">
-                <span class="modal-title">📄 テキスト出力</span>
-                <button class="modal-close" onclick="closeExportModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <div style="margin-bottom: 12px; display: flex; gap: 20px;">
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" id="exportShowEmoji" checked onchange="updateExportPreview()">
-                        <span>絵文字を表示</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                        <input type="checkbox" id="exportShowLines" checked onchange="updateExportPreview()">
-                        <span>インデント線を表示</span>
-                    </label>
+    <!-- Preview Modal -->
+    <div class="preview-overlay" id="previewOverlay">
+        <div class="preview-modal">
+            <div class="preview-header">
+                <h3>📄 コピー内容プレビュー</h3>
+                <div class="preview-header-btns">
+                    <button class="preview-copy-btn" id="previewCopyBtn">📋 コピー</button>
+                    <button class="preview-close-btn" id="previewCloseBtn">&times;</button>
                 </div>
-                <textarea class="modal-textarea" id="exportTextarea" readonly></textarea>
             </div>
-            <div class="modal-footer">
-                <button class="modal-btn modal-btn-secondary" onclick="closeExportModal()">閉じる</button>
-                <button class="modal-btn modal-btn-primary" onclick="copyExportText()">📋 コピー</button>
+            <div class="preview-body">
+                <pre id="previewContent"></pre>
             </div>
         </div>
     </div>
 
-    <!-- Help Modal -->
-    <div class="modal-overlay" id="helpModal">
-        <div class="modal">
-            <div class="modal-header">
-                <span class="modal-title">❓ キーボードショートカット</span>
-                <button class="modal-close" onclick="closeHelpModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="shortcuts-list">
-                    <div class="shortcut-item">
-                        <span>同階層にノード追加</span>
-                        <span class="shortcut-key">Enter</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>子ノード追加</span>
-                        <span class="shortcut-key">Tab</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>親階層に戻る</span>
-                        <span class="shortcut-key">Shift + Tab</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>ノード削除</span>
-                        <span class="shortcut-key">Delete / Backspace</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>編集モード</span>
-                        <span class="shortcut-key">F2 / ダブルクリック</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>ノード間移動</span>
-                        <span class="shortcut-key">↑ ↓ ← →</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>並び替え（上下）</span>
-                        <span class="shortcut-key">Cmd + ↑ / ↓</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>階層移動</span>
-                        <span class="shortcut-key">Cmd + ← / →</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>元に戻す</span>
-                        <span class="shortcut-key">Cmd + Z</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>やり直し</span>
-                        <span class="shortcut-key">Cmd + Y</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>全選択</span>
-                        <span class="shortcut-key">Cmd + A</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>コピー</span>
-                        <span class="shortcut-key">Cmd + C</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>ペースト</span>
-                        <span class="shortcut-key">Cmd + V</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>太字トグル</span>
-                        <span class="shortcut-key">Cmd + B</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>文字色トグル</span>
-                        <span class="shortcut-key">Cmd + Opt + A</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>背景色トグル</span>
-                        <span class="shortcut-key">Cmd + Opt + Y</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>線の太さトグル</span>
-                        <span class="shortcut-key">Cmd + Opt + S</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <span>グレーアウト</span>
-                        <span class="shortcut-key">Cmd + Opt + G</span>
-                    </div>
-                </div>
-                <p style="margin-top: 16px; color: #888; font-size: 12px;">
-                    ※ Macでは Cmd、Windowsでは Ctrl キーを使用<br>
-                    ※ Option+ドラッグでノード間リンク（赤色点線）作成
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn modal-btn-primary" onclick="closeHelpModal()">閉じる</button>
-            </div>
-        </div>
-    </div>
+    <!-- Lasso Selection Rectangle -->
+    <div class="lasso-rect" id="lassoRect"></div>
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
+    (function() {
+        'use strict';
+
         // ========================================
         // Global State
         // ========================================
-        
-        // 階層別アイコン設定
-        const levelIcons = {
-            1: '🐔',
-            2: '🐤',
-            3: '🐣',
-            4: '🥚'
-        };
 
-        // マインドマップデータ構造
+        const levelIcons = { 1: '🐔', 2: '🐤', 3: '🐣', 4: '🥚' };
+
         let mindMapData = {
             root: {
                 id: 'root',
                 text: '中心テーマ',
-                children: [],
-                // スタイルプロパティ
-                bold: false,
-                textColor: '#333333',
-                bgColor: '#ffffff',
-                lineColor: '#999999',
-                thickLine: false,
-                grayout: false
+                children: []
             }
         };
 
-        // スタイルのトグル設定
-        const textColors = ['#333333', '#e53935', '#1e88e5']; // 黒、赤、青
-        const bgColors = ['#ffffff', '#fff9c4', '#e0f7fa']; // 白、黄色、水色
-
-        // 選択状態（複数選択対応）
-        let selectedNodeIds = new Set(); // 選択中のノードID群
-        let lastSelectedNodeId = null;   // 最後に選択したノード（範囲選択の起点）
+        let selectedNodeIds = new Set();
+        let lastSelectedNodeId = null;
         let editingNodeId = null;
 
-        // ビュー状態
         let viewState = {
             zoom: 1,
             panX: 0,
@@ -1009,49 +474,33 @@
             startY: 0
         };
 
-        // Undo/Redo履歴
-        let history = [];
-        let historyIndex = -1;
+        let undoHistory = [];
+        let undoIndex = -1;
         const MAX_HISTORY = 50;
 
-        // クリップボード
         let clipboard = null;
+        let clipboardIsCut = false;
 
-        // ID生成用カウンター
         let nodeIdCounter = 0;
 
-        // テキスト出力オプション
-        let exportOptions = {
-            showEmoji: true,
-            showIndentLines: true
+        // Drag reparenting state
+        let nodeDragState = {
+            isDragging: false,
+            didDrag: false,     // true if actual drag occurred (to suppress click)
+            nodeId: null,
+            draggedNodeIds: null,
+            targetNodeId: null,
+            targetPosition: null
         };
 
-        // ノード間リンク（赤色点線）
-        let nodeLinks = []; // { fromId, toId }
-        
-        // ドラッグ中の状態（Option+ドラッグでリンク作成用）
-        let dragState = {
-            isDragging: false,
-            fromNodeId: null,
+        // Lasso selection state
+        let lassoState = {
+            active: false,
+            didSelect: false,   // true if lasso selected nodes (to suppress click clear)
             startX: 0,
             startY: 0,
             currentX: 0,
             currentY: 0
-        };
-        
-        // ノード移動ドラッグの状態（通常ドラッグで親子関係変更用）
-        let nodeDragState = {
-            isDragging: false,
-            nodeId: null,
-            draggedNodeIds: null, // 複数ノードドラッグ用
-            startX: 0,
-            startY: 0,
-            currentX: 0,
-            currentY: 0,
-            offsetX: 0,
-            offsetY: 0,
-            targetNodeId: null,
-            targetPosition: null // 'child', 'before', 'after'
         };
 
         // ========================================
@@ -1066,11 +515,13 @@
             return JSON.parse(JSON.stringify(obj));
         }
 
-        function showToast(message, duration = 2000) {
+        function showToast(message, duration) {
+            duration = duration || 2000;
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
-            setTimeout(() => {
+            clearTimeout(toast._tid);
+            toast._tid = setTimeout(function() {
                 toast.classList.remove('show');
             }, duration);
         }
@@ -1080,39 +531,30 @@
         // ========================================
 
         function saveState() {
-            // 現在位置より後の履歴を削除
-            history = history.slice(0, historyIndex + 1);
-            
-            // 新しい状態を追加
-            history.push(deepClone(mindMapData));
-            
-            // 最大履歴数を超えたら古いものを削除
-            if (history.length > MAX_HISTORY) {
-                history.shift();
+            undoHistory = undoHistory.slice(0, undoIndex + 1);
+            undoHistory.push(deepClone(mindMapData));
+            if (undoHistory.length > MAX_HISTORY) {
+                undoHistory.shift();
             } else {
-                historyIndex++;
+                undoIndex++;
             }
         }
 
         function undo() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                mindMapData = deepClone(history[historyIndex]);
+            if (undoIndex > 0) {
+                undoIndex--;
+                mindMapData = deepClone(undoHistory[undoIndex]);
                 render();
                 showToast('元に戻しました');
-            } else {
-                showToast('これ以上戻せません');
             }
         }
 
         function redo() {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                mindMapData = deepClone(history[historyIndex]);
+            if (undoIndex < undoHistory.length - 1) {
+                undoIndex++;
+                mindMapData = deepClone(undoHistory[undoIndex]);
                 render();
                 showToast('やり直しました');
-            } else {
-                showToast('これ以上やり直せません');
             }
         }
 
@@ -1120,86 +562,69 @@
         // Node Operations
         // ========================================
 
-        function findNode(id, node = mindMapData.root, parent = null, index = 0) {
-            if (node.id === id) {
-                return { node, parent, index };
-            }
-            for (let i = 0; i < node.children.length; i++) {
-                const result = findNode(id, node.children[i], node, i);
+        function findNode(id, node, parent, index) {
+            if (node === undefined) node = mindMapData.root;
+            if (parent === undefined) parent = null;
+            if (index === undefined) index = 0;
+            if (node.id === id) return { node: node, parent: parent, index: index };
+            for (var i = 0; i < node.children.length; i++) {
+                var result = findNode(id, node.children[i], node, i);
                 if (result) return result;
             }
             return null;
         }
 
-        function getNodeLevel(id, node = mindMapData.root, level = 1) {
+        function getNodeLevel(id, node, level) {
+            if (node === undefined) node = mindMapData.root;
+            if (level === undefined) level = 1;
             if (node.id === id) return level;
-            for (const child of node.children) {
-                const result = getNodeLevel(id, child, level + 1);
+            for (var i = 0; i < node.children.length; i++) {
+                var result = getNodeLevel(id, node.children[i], level + 1);
                 if (result) return result;
             }
             return null;
         }
 
-        function getAllNodes(node = mindMapData.root, result = []) {
+        function getAllNodesInOrder(node, result) {
+            if (node === undefined) node = mindMapData.root;
+            if (result === undefined) result = [];
             result.push(node);
-            for (const child of node.children) {
-                getAllNodes(child, result);
+            for (var i = 0; i < node.children.length; i++) {
+                getAllNodesInOrder(node.children[i], result);
             }
             return result;
         }
 
-        function addChildNode(parentId, text = '新しいノード', autoEdit = true) {
-            const result = findNode(parentId);
-            if (result) {
-                saveState();
-                const newNode = {
-                    id: generateId(),
-                    text: text,
-                    children: [],
-                    bold: false,
-                    textColor: '#333333',
-                    bgColor: '#ffffff',
-                    lineColor: '#999999',
-                    thickLine: false,
-                    grayout: false
-                };
-                result.node.children.push(newNode);
-                render();
-                selectNode(newNode.id);
-                // 自動的に編集モードに入る
-                if (autoEdit) {
-                    setTimeout(() => startEditing(newNode.id), 50);
-                }
-                return newNode;
+        function addChildNode(parentId, text, autoEdit) {
+            if (text === undefined) text = '新しいノード';
+            if (autoEdit === undefined) autoEdit = true;
+            var result = findNode(parentId);
+            if (!result) return null;
+            saveState();
+            var newNode = { id: generateId(), text: text, children: [] };
+            result.node.children.push(newNode);
+            render();
+            selectNode(newNode.id);
+            if (autoEdit) {
+                setTimeout(function() { startEditing(newNode.id); }, 50);
             }
-            return null;
+            return newNode;
         }
 
-        function addSiblingNode(nodeId, text = '新しいノード', autoEdit = true) {
-            const result = findNode(nodeId);
+        function addSiblingNode(nodeId, text, autoEdit) {
+            if (text === undefined) text = '新しいノード';
+            if (autoEdit === undefined) autoEdit = true;
+            var result = findNode(nodeId);
             if (!result || !result.parent) {
-                // ルートノードの場合は子ノードを追加
                 return addChildNode(nodeId, text, autoEdit);
             }
-            
             saveState();
-            const newNode = {
-                id: generateId(),
-                text: text,
-                children: [],
-                bold: false,
-                textColor: '#333333',
-                bgColor: '#ffffff',
-                lineColor: '#999999',
-                thickLine: false,
-                grayout: false
-            };
+            var newNode = { id: generateId(), text: text, children: [] };
             result.parent.children.splice(result.index + 1, 0, newNode);
             render();
             selectNode(newNode.id);
-            // 自動的に編集モードに入る
             if (autoEdit) {
-                setTimeout(() => startEditing(newNode.id), 50);
+                setTimeout(function() { startEditing(newNode.id); }, 50);
             }
             return newNode;
         }
@@ -1209,28 +634,52 @@
                 showToast('ルートノードは削除できません');
                 return false;
             }
-            
-            const result = findNode(nodeId);
-            if (result && result.parent) {
-                saveState();
-                result.parent.children.splice(result.index, 1);
-                
-                // 選択を親または兄弟に移動
-                if (result.parent.children.length > 0) {
-                    const newIndex = Math.min(result.index, result.parent.children.length - 1);
-                    selectNode(result.parent.children[newIndex].id);
-                } else {
-                    selectNode(result.parent.id);
-                }
-                
-                render();
-                return true;
+            var result = findNode(nodeId);
+            if (!result || !result.parent) return false;
+            saveState();
+            result.parent.children.splice(result.index, 1);
+            if (result.parent.children.length > 0) {
+                var idx = Math.min(result.index, result.parent.children.length - 1);
+                selectNode(result.parent.children[idx].id);
+            } else {
+                selectNode(result.parent.id);
             }
-            return false;
+            render();
+            return true;
+        }
+
+        function deleteSelectedNodes() {
+            if (selectedNodeIds.size === 0) return;
+            var ids = [];
+            selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
+            if (ids.length === 0) {
+                showToast('ルートノードは削除できません');
+                return;
+            }
+            var filtered = filterTopLevelNodes(ids);
+            saveState();
+            var lastParent = null;
+            for (var i = 0; i < filtered.length; i++) {
+                var r = findNode(filtered[i]);
+                if (r && r.parent) {
+                    lastParent = r.parent;
+                    r.parent.children.splice(r.index, 1);
+                }
+            }
+            selectedNodeIds.clear();
+            if (lastParent && lastParent.children.length > 0) {
+                selectNode(lastParent.children[0].id);
+            } else if (lastParent) {
+                selectNode(lastParent.id);
+            } else {
+                selectNode('root');
+            }
+            render();
+            showToast(filtered.length + '個のノードを削除しました');
         }
 
         function updateNodeText(nodeId, newText) {
-            const result = findNode(nodeId);
+            var result = findNode(nodeId);
             if (result && result.node.text !== newText) {
                 saveState();
                 result.node.text = newText;
@@ -1238,106 +687,81 @@
         }
 
         function moveNodeUp(nodeId) {
-            const result = findNode(nodeId);
+            var result = findNode(nodeId);
             if (result && result.parent && result.index > 0) {
                 saveState();
-                const siblings = result.parent.children;
-                [siblings[result.index - 1], siblings[result.index]] = 
-                [siblings[result.index], siblings[result.index - 1]];
+                var s = result.parent.children;
+                var tmp = s[result.index - 1];
+                s[result.index - 1] = s[result.index];
+                s[result.index] = tmp;
                 render();
-                showToast('ノードを上に移動しました');
             }
         }
 
         function moveNodeDown(nodeId) {
-            const result = findNode(nodeId);
+            var result = findNode(nodeId);
             if (result && result.parent && result.index < result.parent.children.length - 1) {
                 saveState();
-                const siblings = result.parent.children;
-                [siblings[result.index], siblings[result.index + 1]] = 
-                [siblings[result.index + 1], siblings[result.index]];
+                var s = result.parent.children;
+                var tmp = s[result.index];
+                s[result.index] = s[result.index + 1];
+                s[result.index + 1] = tmp;
                 render();
-                showToast('ノードを下に移動しました');
             }
         }
 
         function promoteNode(nodeId) {
-            // 親の兄弟にする（階層を上げる）
-            const result = findNode(nodeId);
-            if (!result || !result.parent || result.parent.id === 'root') {
-                showToast('これ以上階層を上げられません');
-                return;
-            }
-            
-            const grandparentResult = findNode(result.parent.id);
-            if (grandparentResult && grandparentResult.parent) {
+            var result = findNode(nodeId);
+            if (!result || !result.parent || result.parent.id === 'root') return;
+            var gpResult = findNode(result.parent.id);
+            if (gpResult && gpResult.parent) {
                 saveState();
-                // 現在の親から削除
                 result.parent.children.splice(result.index, 1);
-                // 祖父母の子として追加（親の次の位置）
-                grandparentResult.parent.children.splice(grandparentResult.index + 1, 0, result.node);
+                gpResult.parent.children.splice(gpResult.index + 1, 0, result.node);
                 render();
                 selectNode(nodeId);
-                showToast('階層を上げました');
             }
         }
 
         function demoteNode(nodeId) {
-            // 前の兄弟の子にする（階層を下げる）
-            const result = findNode(nodeId);
-            if (!result || !result.parent || result.index === 0) {
-                showToast('これ以上階層を下げられません');
-                return;
-            }
-            
+            var result = findNode(nodeId);
+            if (!result || !result.parent || result.index === 0) return;
             saveState();
-            const prevSibling = result.parent.children[result.index - 1];
-            // 現在の親から削除
+            var prevSibling = result.parent.children[result.index - 1];
             result.parent.children.splice(result.index, 1);
-            // 前の兄弟の子として追加
             prevSibling.children.push(result.node);
             render();
             selectNode(nodeId);
-            showToast('階層を下げました');
         }
 
         // ========================================
         // Selection & Navigation
         // ========================================
 
-        // 単一選択（従来の動作）
         function selectNode(nodeId) {
             clearSelection();
             if (nodeId) {
                 selectedNodeIds.add(nodeId);
                 lastSelectedNodeId = nodeId;
                 updateSelectionDisplay();
+                scrollNodeIntoView(nodeId);
             }
         }
 
-        // 選択をクリア
         function clearSelection() {
             selectedNodeIds.clear();
             lastSelectedNodeId = null;
-            selectedLinkIndex = null; // リンクの選択も解除
-            document.querySelectorAll('.node.selected').forEach(el => {
+            document.querySelectorAll('.node.selected').forEach(function(el) {
                 el.classList.remove('selected');
             });
-            render(); // リンクの選択表示を更新
         }
 
-        // 選択状態の表示を更新
         function updateSelectionDisplay() {
-            document.querySelectorAll('.node').forEach(el => {
-                if (selectedNodeIds.has(el.dataset.id)) {
-                    el.classList.add('selected');
-                } else {
-                    el.classList.remove('selected');
-                }
+            document.querySelectorAll('.node').forEach(function(el) {
+                el.classList.toggle('selected', selectedNodeIds.has(el.dataset.id));
             });
         }
 
-        // Cmd+クリック: トグル選択
         function toggleSelectNode(nodeId) {
             if (selectedNodeIds.has(nodeId)) {
                 selectedNodeIds.delete(nodeId);
@@ -1348,166 +772,99 @@
             updateSelectionDisplay();
         }
 
-        // Shift+クリック: 範囲選択
         function rangeSelectNode(nodeId) {
-            if (!lastSelectedNodeId) {
-                selectNode(nodeId);
-                return;
+            if (!lastSelectedNodeId) { selectNode(nodeId); return; }
+            var allNodes = getAllNodesInOrder();
+            var si = -1, ei = -1;
+            for (var i = 0; i < allNodes.length; i++) {
+                if (allNodes[i].id === lastSelectedNodeId) si = i;
+                if (allNodes[i].id === nodeId) ei = i;
             }
-            
-            const allNodes = getAllNodesInOrder();
-            const startIndex = allNodes.findIndex(n => n.id === lastSelectedNodeId);
-            const endIndex = allNodes.findIndex(n => n.id === nodeId);
-            
-            if (startIndex === -1 || endIndex === -1) {
-                selectNode(nodeId);
-                return;
-            }
-            
-            // 範囲内のノードをすべて選択
-            const minIndex = Math.min(startIndex, endIndex);
-            const maxIndex = Math.max(startIndex, endIndex);
-            
+            if (si === -1 || ei === -1) { selectNode(nodeId); return; }
+            var mn = Math.min(si, ei), mx = Math.max(si, ei);
             clearSelection();
-            for (let i = minIndex; i <= maxIndex; i++) {
+            for (var i = mn; i <= mx; i++) {
                 selectedNodeIds.add(allNodes[i].id);
             }
             lastSelectedNodeId = nodeId;
             updateSelectionDisplay();
         }
 
-        // Cmd+Shift+クリック: 範囲追加選択
-        function rangeAddSelectNode(nodeId) {
-            if (!lastSelectedNodeId) {
-                toggleSelectNode(nodeId);
-                return;
-            }
-            
-            const allNodes = getAllNodesInOrder();
-            const startIndex = allNodes.findIndex(n => n.id === lastSelectedNodeId);
-            const endIndex = allNodes.findIndex(n => n.id === nodeId);
-            
-            if (startIndex === -1 || endIndex === -1) {
-                toggleSelectNode(nodeId);
-                return;
-            }
-            
-            // 範囲内のノードを追加選択（既存の選択は維持）
-            const minIndex = Math.min(startIndex, endIndex);
-            const maxIndex = Math.max(startIndex, endIndex);
-            
-            for (let i = minIndex; i <= maxIndex; i++) {
-                selectedNodeIds.add(allNodes[i].id);
-            }
-            lastSelectedNodeId = nodeId;
-            updateSelectionDisplay();
-        }
-
-        // ノードを深さ優先順で取得
-        function getAllNodesInOrder(node = mindMapData.root, result = []) {
-            result.push(node);
-            for (const child of node.children) {
-                getAllNodesInOrder(child, result);
-            }
-            return result;
-        }
-
-        // 選択中のノードを取得（互換性のため）
         function getSelectedNodeId() {
             if (selectedNodeIds.size === 0) return null;
             return lastSelectedNodeId || selectedNodeIds.values().next().value;
         }
 
-        // 選択中のノード群を取得
         function getSelectedNodes() {
-            const nodes = [];
-            for (const id of selectedNodeIds) {
-                const result = findNode(id);
-                if (result) nodes.push(result.node);
-            }
+            var nodes = [];
+            selectedNodeIds.forEach(function(id) {
+                var r = findNode(id);
+                if (r) nodes.push(r.node);
+            });
             return nodes;
         }
 
+        // Navigate UP: same-level siblings only
         function navigateUp() {
-            const currentId = getSelectedNodeId();
-            if (!currentId) {
-                selectNode('root');
-                return;
-            }
-            
-            const result = findNode(currentId);
-            if (result && result.parent && result.index > 0) {
-                // 前の兄弟の最後の子孫を選択
-                let target = result.parent.children[result.index - 1];
-                while (target.children.length > 0) {
-                    target = target.children[target.children.length - 1];
-                }
-                selectNode(target.id);
-            } else if (result && result.parent) {
-                selectNode(result.parent.id);
+            var cid = getSelectedNodeId();
+            if (!cid) { selectNode('root'); return; }
+            var r = findNode(cid);
+            if (r && r.parent && r.index > 0) {
+                selectNode(r.parent.children[r.index - 1].id);
             }
         }
 
+        // Navigate DOWN: same-level siblings only
         function navigateDown() {
-            const currentId = getSelectedNodeId();
-            if (!currentId) {
-                selectNode('root');
-                return;
-            }
-            
-            const result = findNode(currentId);
-            if (!result) return;
-            
-            // まず子があれば最初の子へ
-            if (result.node.children.length > 0) {
-                selectNode(result.node.children[0].id);
-                return;
-            }
-            
-            // 次の兄弟を探す
-            let current = result;
-            while (current.parent) {
-                if (current.index < current.parent.children.length - 1) {
-                    selectNode(current.parent.children[current.index + 1].id);
-                    return;
-                }
-                current = findNode(current.parent.id);
+            var cid = getSelectedNodeId();
+            if (!cid) { selectNode('root'); return; }
+            var r = findNode(cid);
+            if (r && r.parent && r.index < r.parent.children.length - 1) {
+                selectNode(r.parent.children[r.index + 1].id);
             }
         }
 
+        // Navigate LEFT: go to parent
         function navigateLeft() {
-            const currentId = getSelectedNodeId();
-            if (!currentId) {
-                selectNode('root');
-                return;
-            }
-            
-            const result = findNode(currentId);
-            if (result && result.parent) {
-                selectNode(result.parent.id);
-            }
+            var cid = getSelectedNodeId();
+            if (!cid) { selectNode('root'); return; }
+            var r = findNode(cid);
+            if (r && r.parent) selectNode(r.parent.id);
         }
 
+        // Navigate RIGHT: go to first child
         function navigateRight() {
-            const currentId = getSelectedNodeId();
-            if (!currentId) {
-                selectNode('root');
-                return;
-            }
-            
-            const result = findNode(currentId);
-            if (result && result.node.children.length > 0) {
-                selectNode(result.node.children[0].id);
+            var cid = getSelectedNodeId();
+            if (!cid) { selectNode('root'); return; }
+            var r = findNode(cid);
+            if (r && r.node.children.length > 0) {
+                selectNode(r.node.children[0].id);
             }
         }
 
         function goToParent() {
-            const currentId = getSelectedNodeId();
-            if (!currentId || currentId === 'root') return;
-            
-            const result = findNode(currentId);
-            if (result && result.parent) {
-                selectNode(result.parent.id);
+            var cid = getSelectedNodeId();
+            if (!cid || cid === 'root') return;
+            var r = findNode(cid);
+            if (r && r.parent) selectNode(r.parent.id);
+        }
+
+        function scrollNodeIntoView(nodeId) {
+            var nodeEl = document.querySelector('[data-id="' + nodeId + '"]');
+            if (!nodeEl) return;
+            var container = document.getElementById('canvasContainer');
+            var rect = nodeEl.getBoundingClientRect();
+            var cRect = container.getBoundingClientRect();
+            var margin = 60;
+            var dx = 0, dy = 0;
+            if (rect.left < cRect.left + margin) dx = cRect.left + margin - rect.left;
+            else if (rect.right > cRect.right - margin) dx = cRect.right - margin - rect.right;
+            if (rect.top < cRect.top + margin) dy = cRect.top + margin - rect.top;
+            else if (rect.bottom > cRect.bottom - margin - 80) dy = cRect.bottom - margin - 80 - rect.bottom;
+            if (dx !== 0 || dy !== 0) {
+                viewState.panX += dx;
+                viewState.panY += dy;
+                updateView();
             }
         }
 
@@ -1516,25 +873,22 @@
         // ========================================
 
         function startEditing(nodeId) {
-            if (editingNodeId) {
-                finishEditing();
-            }
-            
+            if (editingNodeId === nodeId) return;
+            if (editingNodeId) finishEditing();
             editingNodeId = nodeId;
-            selectNode(nodeId);
-            
-            const nodeEl = document.querySelector(`[data-id="${nodeId}"]`);
-            const textEl = nodeEl?.querySelector('.node-text');
-            
+            // Select without clearing other selection state, just ensure this node is selected
+            if (!selectedNodeIds.has(nodeId)) {
+                selectNode(nodeId);
+            }
+            var nodeEl = document.querySelector('[data-id="' + nodeId + '"]');
+            var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
             if (textEl) {
                 nodeEl.classList.add('editing');
-                textEl.contentEditable = true;
+                textEl.contentEditable = 'true';
                 textEl.focus();
-                
-                // 全選択
-                const range = document.createRange();
+                var range = document.createRange();
                 range.selectNodeContents(textEl);
-                const sel = window.getSelection();
+                var sel = window.getSelection();
                 sel.removeAllRanges();
                 sel.addRange(range);
             }
@@ -1542,474 +896,275 @@
 
         function finishEditing() {
             if (!editingNodeId) return;
-            
-            const nodeEl = document.querySelector(`[data-id="${editingNodeId}"]`);
-            const textEl = nodeEl?.querySelector('.node-text');
-            
+            var prevEditingId = editingNodeId;
+            var nodeEl = document.querySelector('[data-id="' + editingNodeId + '"]');
+            var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
+            var textChanged = false;
             if (textEl) {
-                const newText = textEl.textContent.trim() || '空のノード';
+                var newText = textEl.textContent.trim() || '空のノード';
+                var result = findNode(editingNodeId);
+                if (result && result.node.text !== newText) {
+                    textChanged = true;
+                }
                 updateNodeText(editingNodeId, newText);
-                textEl.contentEditable = false;
+                textEl.contentEditable = 'false';
                 nodeEl.classList.remove('editing');
             }
-            
             editingNodeId = null;
+            // Re-render to recalculate layout when text changed
+            if (textChanged) {
+                render();
+                // Re-select the previously edited node
+                selectNode(prevEditingId);
+            }
         }
 
         // ========================================
-        // Copy & Paste
+        // Copy, Cut & Paste
         // ========================================
 
-        function copyNode() {
-            const currentId = getSelectedNodeId();
-            if (!currentId) return;
-            
-            const result = findNode(currentId);
-            if (result) {
-                clipboard = deepClone(result.node);
-                showToast('コピーしました');
+        function copySelectedNodes() {
+            if (selectedNodeIds.size === 0) return;
+            if (selectedNodeIds.size === 1) {
+                var id = getSelectedNodeId();
+                var r = findNode(id);
+                if (r) {
+                    clipboard = deepClone(r.node);
+                    clipboardIsCut = false;
+                    showToast('コピーしました');
+                }
+            } else {
+                var topLevel = filterTopLevelNodes(Array.from(selectedNodeIds));
+                var nodes = [];
+                for (var i = 0; i < topLevel.length; i++) {
+                    var r = findNode(topLevel[i]);
+                    if (r) nodes.push(deepClone(r.node));
+                }
+                if (nodes.length > 0) {
+                    clipboard = nodes;
+                    clipboardIsCut = false;
+                    showToast(nodes.length + '個のノードをコピーしました');
+                }
             }
+        }
+
+        function cutSelectedNodes() {
+            if (selectedNodeIds.size === 0) return;
+            var ids = [];
+            selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
+            if (ids.length === 0) {
+                showToast('ルートノードは切り取れません');
+                return;
+            }
+            var topLevel = filterTopLevelNodes(ids);
+            var nodes = [];
+            for (var i = 0; i < topLevel.length; i++) {
+                var r = findNode(topLevel[i]);
+                if (r) nodes.push(deepClone(r.node));
+            }
+            if (nodes.length === 0) return;
+            clipboard = nodes.length === 1 ? nodes[0] : nodes;
+            clipboardIsCut = true;
+
+            saveState();
+            var lastParent = null;
+            for (var i = 0; i < topLevel.length; i++) {
+                var r = findNode(topLevel[i]);
+                if (r && r.parent) {
+                    lastParent = r.parent;
+                    r.parent.children.splice(r.index, 1);
+                }
+            }
+            selectedNodeIds.clear();
+            if (lastParent && lastParent.children.length > 0) {
+                selectNode(lastParent.children[0].id);
+            } else if (lastParent) {
+                selectNode(lastParent.id);
+            } else {
+                selectNode('root');
+            }
+            render();
+            showToast(topLevel.length + '個のノードを切り取りました');
         }
 
         function pasteNode() {
-            const currentId = getSelectedNodeId();
-            if (!clipboard || !currentId) return;
-            
-            const result = findNode(currentId);
-            if (result) {
-                saveState();
-                
-                // IDを新しく振り直す
-                const cloned = deepClone(clipboard);
-                function reassignIds(node) {
-                    node.id = generateId();
-                    node.children.forEach(reassignIds);
+            var cid = getSelectedNodeId();
+            if (!clipboard || !cid) return;
+            var r = findNode(cid);
+            if (!r) return;
+            saveState();
+            function reassignIds(node) {
+                node.id = generateId();
+                if (node.children) {
+                    for (var i = 0; i < node.children.length; i++) reassignIds(node.children[i]);
                 }
+            }
+            if (Array.isArray(clipboard)) {
+                for (var i = 0; i < clipboard.length; i++) {
+                    var cloned = deepClone(clipboard[i]);
+                    reassignIds(cloned);
+                    r.node.children.push(cloned);
+                }
+                render();
+                showToast(clipboard.length + '個のノードをペーストしました');
+            } else {
+                var cloned = deepClone(clipboard);
                 reassignIds(cloned);
-                
-                result.node.children.push(cloned);
+                r.node.children.push(cloned);
                 render();
                 selectNode(cloned.id);
                 showToast('ペーストしました');
             }
+            if (clipboardIsCut) {
+                clipboard = null;
+                clipboardIsCut = false;
+            }
         }
 
         function selectAll() {
-            // すべてのノードを選択
-            const allNodes = getAllNodesInOrder();
-            
+            var allNodes = getAllNodesInOrder();
             if (selectedNodeIds.size === allNodes.length) {
-                // 全選択済みなら解除
                 clearSelection();
-                showToast('選択を解除しました');
             } else {
-                // 全ノードを選択
+                finishEditing();
                 selectedNodeIds.clear();
-                allNodes.forEach(node => {
-                    selectedNodeIds.add(node.id);
-                });
-                lastSelectedNodeId = allNodes[0]?.id || null;
+                for (var i = 0; i < allNodes.length; i++) {
+                    selectedNodeIds.add(allNodes[i].id);
+                }
+                lastSelectedNodeId = allNodes[0] ? allNodes[0].id : null;
                 updateSelectionDisplay();
-                showToast('全ノードを選択しました');
             }
         }
 
-        // ========================================
-        // Style Toggle Functions
-        // ========================================
-
-        function toggleBold() {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            const nodesToToggle = getSelectedNodes();
-            if (nodesToToggle.length === 0) return;
-            
-            saveState();
-            nodesToToggle.forEach(node => {
-                node.bold = !node.bold;
-            });
-            render();
-            showToast(nodesToToggle[0].bold ? '太字にしました' : '太字を解除しました');
-        }
-
-        function toggleTextColor() {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            const nodesToToggle = getSelectedNodes();
-            if (nodesToToggle.length === 0) return;
-            
-            saveState();
-            nodesToToggle.forEach(node => {
-                const currentIndex = textColors.indexOf(node.textColor || '#333333');
-                const nextIndex = (currentIndex + 1) % textColors.length;
-                node.textColor = textColors[nextIndex];
-            });
-            render();
-            
-            const colorNames = {'#333333': '黒', '#e53935': '赤', '#1e88e5': '青'};
-            showToast(`文字色: ${colorNames[nodesToToggle[0].textColor] || '黒'}`);
-        }
-
-        function toggleBgColor() {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            const nodesToToggle = getSelectedNodes();
-            if (nodesToToggle.length === 0) return;
-            
-            saveState();
-            nodesToToggle.forEach(node => {
-                const currentIndex = bgColors.indexOf(node.bgColor || '#ffffff');
-                const nextIndex = (currentIndex + 1) % bgColors.length;
-                node.bgColor = bgColors[nextIndex];
-            });
-            render();
-            
-            const colorNames = {'#ffffff': '白', '#fff9c4': '黄色', '#e0f7fa': '水色'};
-            showToast(`背景色: ${colorNames[nodesToToggle[0].bgColor] || '白'}`);
-        }
-
-        function toggleThickLine() {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            // ルートノードを除外
-            const nodesToToggle = getSelectedNodes().filter(n => n.id !== 'root');
-            if (nodesToToggle.length === 0) {
-                showToast('ルート以外のノードを選択してください');
-                return;
-            }
-            
-            saveState();
-            nodesToToggle.forEach(node => {
-                node.thickLine = !node.thickLine;
-            });
-            render();
-            showToast(nodesToToggle[0].thickLine ? '線を太くしました' : '線を通常に戻しました');
-        }
-
-        function toggleGrayout() {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            const nodesToToggle = getSelectedNodes();
-            if (nodesToToggle.length === 0) return;
-            
-            saveState();
-            nodesToToggle.forEach(node => {
-                node.grayout = !node.grayout;
-            });
-            render();
-            showToast(nodesToToggle[0].grayout ? 'グレーアウトしました' : 'グレーアウトを解除しました');
-        }
-
-        // ========================================
-        // Style Dropdown Functions
-        // ========================================
-        
-        let activeDropdown = null;
-        
-        function toggleStyleDropdown(type) {
-            const dropdownId = type + 'Dropdown';
-            const dropdown = document.getElementById(dropdownId);
-            const btn = dropdown.previousElementSibling;
-            
-            // 他のドロップダウンを閉じる
-            document.querySelectorAll('.style-dropdown').forEach(d => {
-                if (d.id !== dropdownId) {
-                    d.classList.remove('active');
-                    d.previousElementSibling.classList.remove('active');
+        function filterTopLevelNodes(nodeIds) {
+            var result = [];
+            for (var i = 0; i < nodeIds.length; i++) {
+                var nid = nodeIds[i];
+                if (nid === 'root') continue;
+                var hasAncestor = false;
+                for (var j = 0; j < nodeIds.length; j++) {
+                    if (nodeIds[j] !== nid && isDescendant(nodeIds[j], nid)) {
+                        hasAncestor = true;
+                        break;
+                    }
                 }
-            });
-            
-            // トグル
-            if (dropdown.classList.contains('active')) {
-                dropdown.classList.remove('active');
-                btn.classList.remove('active');
-                activeDropdown = null;
+                if (!hasAncestor) result.push(nid);
+            }
+            return result;
+        }
+
+        function isDescendant(ancestorId, nodeId) {
+            var r = findNode(ancestorId);
+            if (!r) return false;
+            function check(node) {
+                for (var i = 0; i < node.children.length; i++) {
+                    if (node.children[i].id === nodeId) return true;
+                    if (check(node.children[i])) return true;
+                }
+                return false;
+            }
+            return check(r.node);
+        }
+
+        // ========================================
+        // Copy to Clipboard (Floating Button)
+        // ========================================
+
+        function getCurrentCopyText() {
+            var format = document.getElementById('copyFormat').value;
+            var border = document.getElementById('copyBorder').value;
+            var useEmoji = (format === 'hiyoko');
+            var useBorder = (border === 'border');
+            return generateCopyText(mindMapData.root, 0, [], useEmoji, useBorder);
+        }
+
+        function copyToClipboard() {
+            var text = getCurrentCopyText();
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast('✅ コピーしました');
+                }).catch(function() {
+                    fallbackCopy(text);
+                });
             } else {
-                dropdown.classList.add('active');
-                btn.classList.add('active');
-                activeDropdown = dropdownId;
-                updateDropdownSelection(type);
-            }
-        }
-        
-        function closeAllDropdowns() {
-            document.querySelectorAll('.style-dropdown').forEach(d => {
-                d.classList.remove('active');
-                d.previousElementSibling.classList.remove('active');
-            });
-            activeDropdown = null;
-        }
-        
-        // ドロップダウン外クリックで閉じる
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.style-dropdown-wrapper')) {
-                closeAllDropdowns();
-            }
-        });
-        
-        function updateDropdownSelection(type) {
-            // 選択されているノードの色をハイライト
-            const nodes = getSelectedNodes();
-            if (nodes.length === 0) return;
-            
-            const firstNode = nodes[0];
-            
-            if (type === 'bgColor') {
-                const color = firstNode.bgColor || '#ffffff';
-                document.getElementById('bgColorPicker').value = color;
-                document.querySelectorAll('#bgColorPresets .color-preset').forEach(el => {
-                    el.classList.toggle('selected', el.dataset.color === color);
-                });
-            } else if (type === 'textColor') {
-                const color = firstNode.textColor || '#333333';
-                document.getElementById('textColorPicker').value = color;
-                document.querySelectorAll('#textColorPresets .color-preset').forEach(el => {
-                    el.classList.toggle('selected', el.dataset.color === color);
-                });
-            } else if (type === 'lineColor') {
-                const color = firstNode.lineColor || '#999999';
-                document.getElementById('lineColorPicker').value = color;
-                document.querySelectorAll('#lineColorPresets .color-preset').forEach(el => {
-                    el.classList.toggle('selected', el.dataset.color === color);
-                });
-                // 線の太さ選択状態
-                document.getElementById('lineThicknessNormal').classList.toggle('selected', !firstNode.thickLine);
-                document.getElementById('lineThicknessThick').classList.toggle('selected', !!firstNode.thickLine);
-            }
-        }
-        
-        function setBgColor(color) {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            const nodesToStyle = getSelectedNodes();
-            if (nodesToStyle.length === 0) return;
-            
-            saveState();
-            nodesToStyle.forEach(node => {
-                node.bgColor = color;
-                // グレーアウト解除
-                if (node.grayout) node.grayout = false;
-            });
-            render();
-            updateStyleIndicators();
-            
-            // プリセット選択状態更新
-            document.querySelectorAll('#bgColorPresets .color-preset').forEach(el => {
-                el.classList.toggle('selected', el.dataset.color === color);
-            });
-            document.getElementById('bgColorPicker').value = color;
-            
-            showToast('背景色を変更しました');
-        }
-        
-        function setTextColor(color) {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            const nodesToStyle = getSelectedNodes();
-            if (nodesToStyle.length === 0) return;
-            
-            saveState();
-            nodesToStyle.forEach(node => {
-                node.textColor = color;
-                // グレーアウト解除
-                if (node.grayout) node.grayout = false;
-            });
-            render();
-            updateStyleIndicators();
-            
-            // プリセット選択状態更新
-            document.querySelectorAll('#textColorPresets .color-preset').forEach(el => {
-                el.classList.toggle('selected', el.dataset.color === color);
-            });
-            document.getElementById('textColorPicker').value = color;
-            
-            showToast('文字色を変更しました');
-        }
-        
-        function setLineColor(color) {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            // ルートノードを除外
-            const nodesToStyle = getSelectedNodes().filter(n => n.id !== 'root');
-            if (nodesToStyle.length === 0) {
-                showToast('ルート以外のノードを選択してください');
-                return;
-            }
-            
-            saveState();
-            nodesToStyle.forEach(node => {
-                node.lineColor = color;
-            });
-            render();
-            updateStyleIndicators();
-            
-            // プリセット選択状態更新
-            document.querySelectorAll('#lineColorPresets .color-preset').forEach(el => {
-                el.classList.toggle('selected', el.dataset.color === color);
-            });
-            document.getElementById('lineColorPicker').value = color;
-            
-            showToast('線の色を変更しました');
-        }
-        
-        function setLineThickness(thick) {
-            if (selectedNodeIds.size === 0) {
-                showToast('ノードを選択してください');
-                return;
-            }
-            
-            // ルートノードを除外
-            const nodesToStyle = getSelectedNodes().filter(n => n.id !== 'root');
-            if (nodesToStyle.length === 0) {
-                showToast('ルート以外のノードを選択してください');
-                return;
-            }
-            
-            saveState();
-            nodesToStyle.forEach(node => {
-                node.thickLine = thick;
-            });
-            render();
-            
-            // 選択状態更新
-            document.getElementById('lineThicknessNormal').classList.toggle('selected', !thick);
-            document.getElementById('lineThicknessThick').classList.toggle('selected', thick);
-            
-            showToast(thick ? '線を太くしました' : '線を通常に戻しました');
-        }
-        
-        function updateStyleIndicators() {
-            // 選択されているノードの状態をインジケーターに反映
-            const nodes = getSelectedNodes();
-            if (nodes.length === 0) return;
-            
-            const firstNode = nodes[0];
-            
-            // 背景色インジケーター
-            const bgIndicator = document.getElementById('bgColorIndicator');
-            if (bgIndicator) {
-                bgIndicator.style.background = firstNode.grayout ? '#e0e0e0' : (firstNode.bgColor || '#ffffff');
-            }
-            
-            // 文字色インジケーター
-            const textIndicator = document.getElementById('textColorIndicator');
-            if (textIndicator) {
-                textIndicator.style.background = firstNode.grayout ? '#9e9e9e' : (firstNode.textColor || '#333333');
-            }
-            
-            // 線色インジケーター
-            const lineIndicator = document.getElementById('lineColorIndicator');
-            if (lineIndicator) {
-                lineIndicator.style.background = firstNode.lineColor || '#999999';
+                fallbackCopy(text);
             }
         }
 
-        // ========================================
-        // Node Link (Red Dotted Line)
-        // ========================================
-
-        function startLinkDrag(nodeId, clientX, clientY) {
-            dragState.isDragging = true;
-            dragState.fromNodeId = nodeId;
-            dragState.startX = clientX;
-            dragState.startY = clientY;
-            dragState.currentX = clientX;
-            dragState.currentY = clientY;
-            
-            document.body.style.cursor = 'crosshair';
+        function fallbackCopy(text) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0;left:-9999px;';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
+            showToast('✅ コピーしました');
         }
 
-        function updateLinkDrag(clientX, clientY) {
-            if (!dragState.isDragging) return;
-            
-            dragState.currentX = clientX;
-            dragState.currentY = clientY;
-            
-            // ターゲットノードのハイライト
-            document.querySelectorAll('.node').forEach(el => {
-                el.classList.remove('link-target');
-            });
-            
-            const targetNode = getNodeAtPosition(clientX, clientY);
-            if (targetNode && targetNode.id !== dragState.fromNodeId) {
-                const el = document.querySelector(`[data-id="${targetNode.id}"]`);
-                if (el) el.classList.add('link-target');
-            }
-            
-            render();
+        function showPreview() {
+            var text = getCurrentCopyText();
+            document.getElementById('previewContent').textContent = text;
+            document.getElementById('previewOverlay').classList.add('show');
         }
 
-        function endLinkDrag(clientX, clientY) {
-            if (!dragState.isDragging) return;
-            
-            const targetNode = getNodeAtPosition(clientX, clientY);
-            
-            if (targetNode && targetNode.id !== dragState.fromNodeId) {
-                // 既存のリンクをチェック
-                const existingLink = nodeLinks.find(
-                    l => (l.fromId === dragState.fromNodeId && l.toId === targetNode.id) ||
-                         (l.fromId === targetNode.id && l.toId === dragState.fromNodeId)
-                );
-                
-                if (existingLink) {
-                    // 既存のリンクを削除
-                    nodeLinks = nodeLinks.filter(l => l !== existingLink);
-                    showToast('リンクを削除しました');
+        function hidePreview() {
+            document.getElementById('previewOverlay').classList.remove('show');
+        }
+
+        function generateCopyText(node, level, parentContinues, useEmoji, useBorder) {
+            var result = '';
+            var iconLevel = Math.min(level + 1, 4);
+            var icon = useEmoji ? (levelIcons[iconLevel] + ' ') : '';
+
+            // ---- Root (level 0) ----
+            if (level === 0) {
+                result = icon + node.text + '\n';
+            } else {
+                // Build the prefix from ancestor continuation info
+                var prefix = '';
+                for (var i = 0; i < level - 1; i++) {
+                    if (useBorder) {
+                        prefix += parentContinues[i] ? '│  ' : '   ';
+                    } else {
+                        prefix += '  ';
+                    }
+                }
+                // Connector for this node
+                var isLast = (parentContinues[level - 1] === false);
+                var connector;
+                if (useBorder) {
+                    connector = isLast ? '└─ ' : '├─ ';
                 } else {
-                    // 新しいリンクを追加
-                    nodeLinks.push({
-                        fromId: dragState.fromNodeId,
-                        toId: targetNode.id
-                    });
-                    showToast('リンクを作成しました');
+                    connector = '  ';
                 }
+                result = prefix + connector + icon + node.text + '\n';
             }
-            
-            // ドラッグ状態をリセット
-            dragState.isDragging = false;
-            dragState.fromNodeId = null;
-            document.body.style.cursor = '';
-            
-            document.querySelectorAll('.node').forEach(el => {
-                el.classList.remove('link-target');
-            });
-            
-            render();
-        }
 
-        function getNodeAtPosition(clientX, clientY) {
-            const elements = document.elementsFromPoint(clientX, clientY);
-            for (const el of elements) {
-                if (el.classList.contains('node') && !el.classList.contains('drag-ghost')) {
-                    const nodeId = el.dataset.id;
-                    return findNode(nodeId)?.node;
+            // ---- Children ----
+            for (var i = 0; i < node.children.length; i++) {
+                var isLastChild = (i === node.children.length - 1);
+                var newContinues = parentContinues.slice();
+                newContinues.push(!isLastChild);
+                result += generateCopyText(node.children[i], level + 1, newContinues, useEmoji, useBorder);
+            }
+
+            // ---- Separator blank line between sibling groups (border mode only) ----
+            // Add a continuation-bar blank line after a node that has children,
+            // if it is NOT the last sibling at its level and border mode is on.
+            if (useBorder && level > 0 && node.children.length > 0) {
+                var amILast = (parentContinues[level - 1] === false);
+                if (!amILast) {
+                    var sep = '';
+                    for (var i = 0; i < level - 1; i++) {
+                        sep += parentContinues[i] ? '│  ' : '   ';
+                    }
+                    sep += '│';
+                    result += sep + '\n';
                 }
             }
-            return null;
+            return result;
         }
 
         // ========================================
@@ -2017,68 +1172,51 @@
         // ========================================
 
         function startNodeDrag(nodeId, clientX, clientY, nodeEl) {
-            // ルートノードは移動不可
             if (nodeId === 'root') return;
-            
-            // 少し遅延させてクリックとの区別をつける
-            const startTime = Date.now();
-            
-            const onMouseMove = (e) => {
-                const moved = Math.abs(e.clientX - clientX) > 5 || Math.abs(e.clientY - clientY) > 5;
-                const elapsed = Date.now() - startTime;
-                
-                if (moved && elapsed > 100 && !nodeDragState.isDragging) {
-                    // ドラッグ開始
+            var startTime = Date.now();
+            nodeDragState.didDrag = false;
+
+            function onMouseMove(e) {
+                var moved = Math.abs(e.clientX - clientX) > 5 || Math.abs(e.clientY - clientY) > 5;
+                var elapsed = Date.now() - startTime;
+                if (moved && elapsed > 150 && !nodeDragState.isDragging) {
                     nodeDragState.isDragging = true;
+                    nodeDragState.didDrag = true;
                     nodeDragState.nodeId = nodeId;
-                    nodeDragState.startX = clientX;
-                    nodeDragState.startY = clientY;
-                    nodeDragState.currentX = e.clientX;
-                    nodeDragState.currentY = e.clientY;
-                    
-                    // 複数選択されている場合はそれを使用、そうでなければクリックしたノードのみ
                     if (selectedNodeIds.has(nodeId) && selectedNodeIds.size > 1) {
-                        // 選択されているノードをドラッグ対象に（ルートを除く）
-                        nodeDragState.draggedNodeIds = [...selectedNodeIds].filter(id => id !== 'root');
+                        var ids = [];
+                        selectedNodeIds.forEach(function(id) { if (id !== 'root') ids.push(id); });
+                        nodeDragState.draggedNodeIds = ids;
                     } else {
                         nodeDragState.draggedNodeIds = [nodeId];
                     }
-                    
-                    // ゴーストノードを作成（複数の場合はバッジ付き）
                     createDragGhost(nodeEl, e.clientX, e.clientY, nodeDragState.draggedNodeIds.length);
-                    
-                    // 元のノードを半透明に
-                    nodeDragState.draggedNodeIds.forEach(id => {
-                        const el = document.querySelector(`[data-id="${id}"]`);
+                    nodeDragState.draggedNodeIds.forEach(function(id) {
+                        var el = document.querySelector('[data-id="' + id + '"]');
                         if (el) el.classList.add('dragging');
                     });
                 }
-                
                 if (nodeDragState.isDragging) {
                     updateNodeDrag(e.clientX, e.clientY);
                 }
-            };
-            
-            const onMouseUp = (e) => {
+            }
+
+            function onMouseUp(e) {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
-                
                 if (nodeDragState.isDragging) {
-                    endNodeDrag(e.clientX, e.clientY);
+                    endNodeDrag();
                 }
-            };
-            
+            }
+
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         }
 
-        function createDragGhost(nodeEl, clientX, clientY, count = 1) {
-            // 既存のゴーストを削除
-            const existingGhost = document.querySelector('.drag-ghost');
-            if (existingGhost) existingGhost.remove();
-            
-            // ゴーストを作成
-            const ghost = nodeEl.cloneNode(true);
+        function createDragGhost(nodeEl, clientX, clientY, count) {
+            var existing = document.querySelector('.drag-ghost');
+            if (existing) existing.remove();
+            var ghost = nodeEl.cloneNode(true);
             ghost.classList.add('drag-ghost');
             ghost.classList.remove('selected', 'dragging');
             ghost.style.left = clientX + 'px';
@@ -2086,266 +1224,180 @@
             ghost.style.transform = 'translate(-50%, -50%)';
             ghost.style.position = 'fixed';
             ghost.style.width = nodeEl.offsetWidth + 'px';
-            
-            // 複数ノードの場合はバッジを追加
             if (count > 1) {
-                const badge = document.createElement('span');
-                badge.style.cssText = `
-                    position: absolute;
-                    top: -8px;
-                    right: -8px;
-                    background: #e53935;
-                    color: white;
-                    border-radius: 50%;
-                    width: 24px;
-                    height: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 12px;
-                    font-weight: bold;
-                `;
+                var badge = document.createElement('span');
+                badge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:#e53935;color:white;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;';
                 badge.textContent = count;
                 ghost.appendChild(badge);
             }
-            
             document.body.appendChild(ghost);
         }
 
         function updateNodeDrag(clientX, clientY) {
             if (!nodeDragState.isDragging) return;
-            
-            nodeDragState.currentX = clientX;
-            nodeDragState.currentY = clientY;
-            
-            // ゴーストを移動
-            const ghost = document.querySelector('.drag-ghost');
-            if (ghost) {
-                ghost.style.left = clientX + 'px';
-                ghost.style.top = clientY + 'px';
-            }
-            
-            // すべてのノードのハイライトをクリア
-            document.querySelectorAll('.node').forEach(el => {
+            var ghost = document.querySelector('.drag-ghost');
+            if (ghost) { ghost.style.left = clientX + 'px'; ghost.style.top = clientY + 'px'; }
+            document.querySelectorAll('.node').forEach(function(el) {
                 el.classList.remove('drag-over-child', 'drag-over-before', 'drag-over-after');
             });
-            
-            // ドロップターゲットを検出
-            const targetInfo = getDropTarget(clientX, clientY);
-            nodeDragState.targetNodeId = targetInfo?.nodeId || null;
-            nodeDragState.targetPosition = targetInfo?.position || null;
-            
-            // ターゲットをハイライト
-            if (targetInfo) {
-                const targetEl = document.querySelector(`[data-id="${targetInfo.nodeId}"]`);
-                if (targetEl) {
-                    if (targetInfo.position === 'child') {
-                        targetEl.classList.add('drag-over-child');
-                    } else if (targetInfo.position === 'before') {
-                        targetEl.classList.add('drag-over-before');
-                    } else if (targetInfo.position === 'after') {
-                        targetEl.classList.add('drag-over-after');
-                    }
-                }
+            var target = getDropTarget(clientX, clientY);
+            nodeDragState.targetNodeId = target ? target.nodeId : null;
+            nodeDragState.targetPosition = target ? target.position : null;
+            if (target) {
+                var tEl = document.querySelector('[data-id="' + target.nodeId + '"]');
+                if (tEl) tEl.classList.add('drag-over-' + target.position);
             }
         }
 
         function getDropTarget(clientX, clientY) {
-            const elements = document.elementsFromPoint(clientX, clientY);
-            const draggedIds = nodeDragState.draggedNodeIds || [nodeDragState.nodeId];
-            
-            for (const el of elements) {
-                if (el.classList.contains('node') && !el.classList.contains('drag-ghost')) {
-                    const targetId = el.dataset.id;
-                    
-                    // ドラッグ中のノード自身にはドロップ不可
-                    if (draggedIds.includes(targetId)) continue;
-                    
-                    // ドラッグ中のノードの子孫にはドロップ不可
-                    let isDescendantOfDragged = false;
-                    for (const draggedId of draggedIds) {
-                        if (isDescendant(draggedId, targetId)) {
-                            isDescendantOfDragged = true;
-                            break;
-                        }
-                    }
-                    if (isDescendantOfDragged) continue;
-                    
-                    // ノードの位置に応じてドロップ位置を決定
-                    const rect = el.getBoundingClientRect();
-                    const relativeY = clientY - rect.top;
-                    const height = rect.height;
-                    
-                    // ルートノードの場合は子としてのみドロップ可能
-                    if (targetId === 'root') {
-                        return { nodeId: targetId, position: 'child' };
-                    }
-                    
-                    // 上部1/4なら前に挿入、下部1/4なら後に挿入、中央なら子として追加
-                    if (relativeY < height * 0.25) {
-                        return { nodeId: targetId, position: 'before' };
-                    } else if (relativeY > height * 0.75) {
-                        return { nodeId: targetId, position: 'after' };
-                    } else {
-                        return { nodeId: targetId, position: 'child' };
-                    }
+            var elements = document.elementsFromPoint(clientX, clientY);
+            var draggedIds = nodeDragState.draggedNodeIds || [nodeDragState.nodeId];
+            for (var i = 0; i < elements.length; i++) {
+                var el = elements[i];
+                if (!el.classList.contains('node') || el.classList.contains('drag-ghost')) continue;
+                var tid = el.dataset.id;
+                if (draggedIds.indexOf(tid) >= 0) continue;
+                var isDesc = false;
+                for (var j = 0; j < draggedIds.length; j++) {
+                    if (isDescendant(draggedIds[j], tid)) { isDesc = true; break; }
                 }
+                if (isDesc) continue;
+                var rect = el.getBoundingClientRect();
+                var relY = clientY - rect.top;
+                var h = rect.height;
+                if (tid === 'root') return { nodeId: tid, position: 'child' };
+                if (relY < h * 0.25) return { nodeId: tid, position: 'before' };
+                if (relY > h * 0.75) return { nodeId: tid, position: 'after' };
+                return { nodeId: tid, position: 'child' };
             }
-            
             return null;
         }
 
-        function isDescendant(ancestorId, nodeId) {
-            const result = findNode(ancestorId);
-            if (!result) return false;
-            
-            function checkChildren(node) {
-                for (const child of node.children) {
-                    if (child.id === nodeId) return true;
-                    if (checkChildren(child)) return true;
-                }
-                return false;
-            }
-            
-            return checkChildren(result.node);
-        }
-
-        function endNodeDrag(clientX, clientY) {
+        function endNodeDrag() {
             if (!nodeDragState.isDragging) return;
-            
-            // ゴーストを削除
-            const ghost = document.querySelector('.drag-ghost');
+            var ghost = document.querySelector('.drag-ghost');
             if (ghost) ghost.remove();
-            
-            // ハイライトをクリア
-            document.querySelectorAll('.node').forEach(el => {
+            document.querySelectorAll('.node').forEach(function(el) {
                 el.classList.remove('dragging', 'drag-over-child', 'drag-over-before', 'drag-over-after');
             });
-            
-            // ドロップ処理
             if (nodeDragState.targetNodeId && nodeDragState.targetPosition) {
-                const draggedIds = nodeDragState.draggedNodeIds || [nodeDragState.nodeId];
                 moveNodes(
-                    draggedIds, 
-                    nodeDragState.targetNodeId, 
+                    nodeDragState.draggedNodeIds || [nodeDragState.nodeId],
+                    nodeDragState.targetNodeId,
                     nodeDragState.targetPosition
                 );
             }
-            
-            // 状態をリセット
             nodeDragState.isDragging = false;
             nodeDragState.nodeId = null;
             nodeDragState.draggedNodeIds = null;
             nodeDragState.targetNodeId = null;
             nodeDragState.targetPosition = null;
-            
             render();
         }
 
-        // 複数ノードを移動
         function moveNodes(nodeIds, targetId, position) {
             if (!nodeIds || nodeIds.length === 0) return;
-            
-            const targetResult = findNode(targetId);
+            var targetResult = findNode(targetId);
             if (!targetResult) return;
-            
-            // 移動対象のノードをフィルタリング（ルートと、他の移動対象の子孫は除外）
-            const filteredIds = filterMovableNodes(nodeIds);
-            if (filteredIds.length === 0) return;
-            
+            var filtered = filterTopLevelNodes(nodeIds);
+            if (filtered.length === 0) return;
             saveState();
-            
-            // ノードデータを収集し、元の場所から削除
-            const nodesToMove = [];
-            for (const nodeId of filteredIds) {
-                const nodeResult = findNode(nodeId);
-                if (nodeResult && nodeResult.parent) {
-                    nodesToMove.push({
-                        id: nodeId,
-                        data: nodeResult.node,
-                        parent: nodeResult.parent,
-                        index: nodeResult.index
-                    });
-                }
+            var nodesToMove = [];
+            for (var i = 0; i < filtered.length; i++) {
+                var nr = findNode(filtered[i]);
+                if (nr && nr.parent) nodesToMove.push({ id: filtered[i], data: nr.node, parent: nr.parent, index: nr.index });
             }
-            
-            // インデックスの大きい順にソートして削除（インデックスのずれを防ぐ）
-            nodesToMove.sort((a, b) => {
-                if (a.parent === b.parent) {
-                    return b.index - a.index;
-                }
-                return 0;
-            });
-            
-            // 元の場所から削除
-            for (const item of nodesToMove) {
-                const currentResult = findNode(item.id);
-                if (currentResult && currentResult.parent) {
-                    currentResult.parent.children.splice(currentResult.index, 1);
-                }
+            nodesToMove.sort(function(a, b) { return a.parent === b.parent ? b.index - a.index : 0; });
+            for (var i = 0; i < nodesToMove.length; i++) {
+                var cur = findNode(nodesToMove[i].id);
+                if (cur && cur.parent) cur.parent.children.splice(cur.index, 1);
             }
-            
-            // 新しい場所に追加（元の順序を維持）
             nodesToMove.reverse();
-            
             if (position === 'child') {
-                for (const item of nodesToMove) {
-                    const newTargetResult = findNode(targetId);
-                    if (newTargetResult) {
-                        newTargetResult.node.children.push(item.data);
-                    }
+                for (var i = 0; i < nodesToMove.length; i++) {
+                    var tr = findNode(targetId);
+                    if (tr) tr.node.children.push(nodesToMove[i].data);
                 }
-                showToast(`${nodesToMove.length}個のノードを「${targetResult.node.text}」の子に移動しました`);
             } else if (position === 'before') {
-                for (const item of nodesToMove) {
-                    const newTargetResult = findNode(targetId);
-                    if (newTargetResult && newTargetResult.parent) {
-                        newTargetResult.parent.children.splice(newTargetResult.index, 0, item.data);
-                    }
+                for (var i = 0; i < nodesToMove.length; i++) {
+                    var tr = findNode(targetId);
+                    if (tr && tr.parent) tr.parent.children.splice(tr.index, 0, nodesToMove[i].data);
                 }
-                showToast(`${nodesToMove.length}個のノードを「${targetResult.node.text}」の前に移動しました`);
             } else if (position === 'after') {
-                // afterの場合は逆順で挿入（最初のノードがターゲットの直後に来るように）
                 nodesToMove.reverse();
-                for (const item of nodesToMove) {
-                    const newTargetResult = findNode(targetId);
-                    if (newTargetResult && newTargetResult.parent) {
-                        newTargetResult.parent.children.splice(newTargetResult.index + 1, 0, item.data);
-                    }
+                for (var i = 0; i < nodesToMove.length; i++) {
+                    var tr = findNode(targetId);
+                    if (tr && tr.parent) tr.parent.children.splice(tr.index + 1, 0, nodesToMove[i].data);
                 }
-                showToast(`${nodesToMove.length}個のノードを「${targetResult.node.text}」の後に移動しました`);
             }
-            
-            // 移動したノードを選択状態に
             selectedNodeIds.clear();
-            for (const item of nodesToMove) {
-                selectedNodeIds.add(item.id);
-            }
-            lastSelectedNodeId = nodesToMove[0]?.id || null;
+            for (var i = 0; i < nodesToMove.length; i++) selectedNodeIds.add(nodesToMove[i].id);
+            lastSelectedNodeId = nodesToMove[0] ? nodesToMove[0].id : null;
         }
 
-        // 移動可能なノードをフィルタリング（親子関係にあるノードは親のみを移動）
-        function filterMovableNodes(nodeIds) {
-            const result = [];
-            
-            for (const nodeId of nodeIds) {
-                if (nodeId === 'root') continue;
-                
-                // このノードの祖先が移動対象に含まれていないかチェック
-                let hasAncestorInList = false;
-                for (const otherId of nodeIds) {
-                    if (otherId !== nodeId && isDescendant(otherId, nodeId)) {
-                        hasAncestorInList = true;
-                        break;
-                    }
+        // ========================================
+        // Lasso (Rectangle) Selection
+        // ========================================
+
+        function startLasso(clientX, clientY) {
+            lassoState.active = true;
+            lassoState.didSelect = false;
+            lassoState.startX = clientX;
+            lassoState.startY = clientY;
+            lassoState.currentX = clientX;
+            lassoState.currentY = clientY;
+            var rect = document.getElementById('lassoRect');
+            rect.style.display = 'block';
+            rect.style.left = clientX + 'px';
+            rect.style.top = clientY + 'px';
+            rect.style.width = '0px';
+            rect.style.height = '0px';
+        }
+
+        function updateLasso(clientX, clientY) {
+            if (!lassoState.active) return;
+            lassoState.currentX = clientX;
+            lassoState.currentY = clientY;
+            var x = Math.min(lassoState.startX, clientX);
+            var y = Math.min(lassoState.startY, clientY);
+            var w = Math.abs(clientX - lassoState.startX);
+            var h = Math.abs(clientY - lassoState.startY);
+            var rect = document.getElementById('lassoRect');
+            rect.style.left = x + 'px';
+            rect.style.top = y + 'px';
+            rect.style.width = w + 'px';
+            rect.style.height = h + 'px';
+        }
+
+        function endLasso() {
+            if (!lassoState.active) return;
+            lassoState.active = false;
+            var rect = document.getElementById('lassoRect');
+            rect.style.display = 'none';
+
+            var x1 = Math.min(lassoState.startX, lassoState.currentX);
+            var y1 = Math.min(lassoState.startY, lassoState.currentY);
+            var x2 = Math.max(lassoState.startX, lassoState.currentX);
+            var y2 = Math.max(lassoState.startY, lassoState.currentY);
+
+            // Require minimum size to avoid treating clicks as lasso
+            if (Math.abs(x2 - x1) < 8 && Math.abs(y2 - y1) < 8) return;
+
+            clearSelection();
+            document.querySelectorAll('.node').forEach(function(el) {
+                var r = el.getBoundingClientRect();
+                var cx = r.left + r.width / 2;
+                var cy = r.top + r.height / 2;
+                if (cx >= x1 && cx <= x2 && cy >= y1 && cy <= y2) {
+                    selectedNodeIds.add(el.dataset.id);
                 }
-                
-                if (!hasAncestorInList) {
-                    result.push(nodeId);
-                }
+            });
+            if (selectedNodeIds.size > 0) {
+                lastSelectedNodeId = selectedNodeIds.values().next().value;
+                updateSelectionDisplay();
+                lassoState.didSelect = true;
+                showToast(selectedNodeIds.size + '個のノードを選択しました');
             }
-            
-            return result;
         }
 
         // ========================================
@@ -2353,411 +1405,211 @@
         // ========================================
 
         function render() {
-            const container = document.getElementById('canvasInner');
-            const svg = document.getElementById('linesSvg');
-            
-            // 既存のノードをクリア（SVG以外）
-            const existingNodes = container.querySelectorAll('.node');
-            existingNodes.forEach(n => n.remove());
-            
-            // SVGをクリア
+            var container = document.getElementById('canvasInner');
+            var svg = document.getElementById('linesSvg');
+            container.querySelectorAll('.node').forEach(function(n) { n.remove(); });
             svg.innerHTML = '';
-            
-            // ノードを再帰的に配置
-            const positions = {};
-            layoutNodes(mindMapData.root, positions);
-            
-            // ノードを描画
+
+            // Pass 1: Measure actual node dimensions by creating temporary elements
+            var nodeDims = measureNodeDimensions(mindMapData.root, container);
+
+            // Pass 2: Layout with actual dimensions
+            var positions = {};
+            layoutNodes(mindMapData.root, positions, 0, 0, 1, nodeDims);
+
+            // Pass 3: Render nodes and lines
             renderNodes(mindMapData.root, container, positions);
-            
-            // 接続線を描画
             renderLines(mindMapData.root, svg, positions);
-            
-            // ノード間リンク（赤色点線）を描画
-            renderNodeLinks(svg, positions);
-            
-            // ドラッグプレビューを描画
-            renderDragPreview(svg, positions);
-            
-            // 選択状態を復元
             updateSelectionDisplay();
-            
-            // ビューを更新
             updateView();
         }
 
-        function layoutNodes(node, positions, x = 0, y = 0, level = 1) {
-            const nodeWidth = 150;
-            const nodeHeight = 40;
-            const horizontalGap = 80;
-            const verticalGap = 20;
-            
-            // 子ノードの総高さを計算
-            let totalChildrenHeight = 0;
-            const childHeights = [];
-            
-            for (const child of node.children) {
-                const childHeight = calculateSubtreeHeight(child, verticalGap, nodeHeight);
-                childHeights.push(childHeight);
-                totalChildrenHeight += childHeight;
+        // Measure actual rendered width AND height of each node's text
+        function measureNodeDimensions(rootNode, container) {
+            var dims = {};
+            // Create a measurer that exactly mirrors the .node DOM structure
+            var measurer = document.createElement('div');
+            measurer.className = 'node';
+            measurer.style.position = 'absolute';
+            measurer.style.visibility = 'hidden';
+            measurer.style.pointerEvents = 'none';
+            // Don't set transform since we just need dimensions
+            var measurerText = document.createElement('span');
+            measurerText.className = 'node-text';
+            measurer.appendChild(measurerText);
+            container.appendChild(measurer);
+
+            function measure(node) {
+                measurerText.textContent = node.text;
+                // Root nodes have larger font
+                if (node.id === 'root') {
+                    measurer.classList.add('root');
+                } else {
+                    measurer.classList.remove('root');
+                }
+                dims[node.id] = { width: measurer.offsetWidth, height: measurer.offsetHeight };
+                for (var i = 0; i < node.children.length; i++) {
+                    measure(node.children[i]);
+                }
             }
-            
-            if (node.children.length > 1) {
-                totalChildrenHeight += (node.children.length - 1) * verticalGap;
+            measure(rootNode);
+            container.removeChild(measurer);
+            return dims;
+        }
+
+        function layoutNodes(node, positions, x, y, level, nodeDims) {
+            if (x === undefined) x = 0;
+            if (y === undefined) y = 0;
+            if (level === undefined) level = 1;
+            var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
+            var nodeWidth = dims.width;
+            var nodeHeight = dims.height;
+            var hGap = 40, vGap = 16;
+            var totalH = 0, childHeights = [];
+            for (var i = 0; i < node.children.length; i++) {
+                var ch = calcSubtreeHeight(node.children[i], vGap, nodeDims);
+                childHeights.push(ch);
+                totalH += ch;
             }
-            
-            // 現在のノードを配置
-            positions[node.id] = {
-                x: x,
-                y: y,
-                width: nodeWidth,
-                height: nodeHeight,
-                level: level
-            };
-            
-            // 子ノードを配置
-            let childY = y - totalChildrenHeight / 2;
-            for (let i = 0; i < node.children.length; i++) {
-                const child = node.children[i];
-                const childHeight = childHeights[i];
-                const childCenterY = childY + childHeight / 2;
-                
-                layoutNodes(
-                    child, 
-                    positions, 
-                    x + nodeWidth + horizontalGap, 
-                    childCenterY,
-                    level + 1
-                );
-                
-                childY += childHeight + verticalGap;
+            if (node.children.length > 1) totalH += (node.children.length - 1) * vGap;
+            positions[node.id] = { x: x, y: y, width: nodeWidth, height: nodeHeight, level: level };
+            var childX = x + nodeWidth + hGap;
+            var childY = y - totalH / 2;
+            for (var i = 0; i < node.children.length; i++) {
+                var ch = childHeights[i];
+                var centerY = childY + ch / 2;
+                layoutNodes(node.children[i], positions, childX, centerY, level + 1, nodeDims);
+                childY += ch + vGap;
             }
-            
             return positions;
         }
 
-        function calculateSubtreeHeight(node, gap, nodeHeight) {
-            if (node.children.length === 0) {
-                return nodeHeight;
+        function calcSubtreeHeight(node, gap, nodeDims) {
+            var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
+            var nodeHeight = dims.height;
+            if (node.children.length === 0) return nodeHeight;
+            var total = 0;
+            for (var i = 0; i < node.children.length; i++) {
+                total += calcSubtreeHeight(node.children[i], gap, nodeDims);
             }
-            
-            let totalHeight = 0;
-            for (const child of node.children) {
-                totalHeight += calculateSubtreeHeight(child, gap, nodeHeight);
-            }
-            totalHeight += (node.children.length - 1) * gap;
-            
-            return Math.max(nodeHeight, totalHeight);
+            total += (node.children.length - 1) * gap;
+            return Math.max(nodeHeight, total);
         }
 
         function renderNodes(node, container, positions) {
-            const pos = positions[node.id];
+            var pos = positions[node.id];
             if (!pos) return;
-            
-            const nodeEl = document.createElement('div');
-            nodeEl.className = 'node' + (node.id === 'root' ? ' root' : '');
-            nodeEl.dataset.id = node.id;
-            nodeEl.style.left = pos.x + 'px';
-            nodeEl.style.top = pos.y + 'px';
-            nodeEl.style.transform = 'translateY(-50%)';
-            
-            // スタイルプロパティを適用
-            if (node.grayout) {
-                // グレーアウト状態
-                nodeEl.style.backgroundColor = '#e0e0e0';
-                nodeEl.style.color = '#9e9e9e';
-                nodeEl.style.borderColor = '#bdbdbd';
-            } else {
-                if (node.bgColor && node.bgColor !== '#ffffff') {
-                    nodeEl.style.backgroundColor = node.bgColor;
-                }
-                if (node.textColor && node.textColor !== '#333333') {
-                    nodeEl.style.color = node.textColor;
-                }
-            }
-            if (node.bold) {
-                nodeEl.style.fontWeight = 'bold';
-            }
-            
-            const textEl = document.createElement('span');
+            var el = document.createElement('div');
+            el.className = 'node' + (node.id === 'root' ? ' root' : '');
+            el.dataset.id = node.id;
+            el.style.left = pos.x + 'px';
+            el.style.top = pos.y + 'px';
+            el.style.width = pos.width + 'px';
+            el.style.transform = 'translateY(-50%)';
+            var textEl = document.createElement('span');
             textEl.className = 'node-text';
             textEl.textContent = node.text;
-            nodeEl.appendChild(textEl);
-            
-            // イベントリスナー
-            nodeEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (editingNodeId !== node.id && !nodeDragState.isDragging) {
-                    finishEditing();
-                    
-                    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-                    const cmdKey = isMac ? e.metaKey : e.ctrlKey;
-                    
-                    if (cmdKey && e.shiftKey) {
-                        // Cmd+Shift+クリック: 範囲追加選択
-                        rangeAddSelectNode(node.id);
-                    } else if (e.shiftKey) {
-                        // Shift+クリック: 範囲選択
-                        rangeSelectNode(node.id);
-                    } else if (cmdKey) {
-                        // Cmd+クリック: トグル選択
-                        toggleSelectNode(node.id);
-                    } else {
-                        // 通常クリック: 単一選択
-                        selectNode(node.id);
+            el.appendChild(textEl);
+
+            // Use a closure to capture node reference
+            (function(nodeData, nodeElement) {
+
+                // Click handler: default to editing mode
+                nodeElement.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    // If a drag just occurred, suppress click
+                    if (nodeDragState.didDrag) {
+                        nodeDragState.didDrag = false;
+                        return;
                     }
-                }
-            });
-            
-            nodeEl.addEventListener('dblclick', (e) => {
-                e.stopPropagation();
-                startEditing(node.id);
-            });
-            
-            // マウスダウン: ドラッグ開始
-            nodeEl.addEventListener('mousedown', (e) => {
-                if (e.altKey) {
-                    // Option+ドラッグでリンク作成
+
+                    var isMac = /Mac/.test(navigator.platform);
+                    var cmdKey = isMac ? e.metaKey : e.ctrlKey;
+
+                    if (cmdKey && e.shiftKey) {
+                        finishEditing();
+                        var allNodes = getAllNodesInOrder();
+                        var si = -1, ei = -1;
+                        for (var i = 0; i < allNodes.length; i++) {
+                            if (allNodes[i].id === lastSelectedNodeId) si = i;
+                            if (allNodes[i].id === nodeData.id) ei = i;
+                        }
+                        if (si !== -1 && ei !== -1) {
+                            var mn = Math.min(si, ei), mx = Math.max(si, ei);
+                            for (var i = mn; i <= mx; i++) selectedNodeIds.add(allNodes[i].id);
+                            lastSelectedNodeId = nodeData.id;
+                            updateSelectionDisplay();
+                        }
+                    } else if (e.shiftKey) {
+                        finishEditing();
+                        rangeSelectNode(nodeData.id);
+                    } else if (cmdKey) {
+                        finishEditing();
+                        toggleSelectNode(nodeData.id);
+                    } else {
+                        // Normal click -> enter edit mode directly
+                        if (editingNodeId === nodeData.id) return;
+                        finishEditing();
+                        selectNode(nodeData.id);
+                        startEditing(nodeData.id);
+                    }
+                });
+
+                // Double-click: enter edit mode (for when already selected but not editing)
+                nodeElement.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    startEditing(nodeData.id);
+                });
+
+                // Mousedown: start potential drag (only left button, no modifiers, not editing)
+                nodeElement.addEventListener('mousedown', function(e) {
+                    if (e.button !== 0) return;
+                    if (editingNodeId) return;
+                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
                     e.preventDefault();
                     e.stopPropagation();
-                    startLinkDrag(node.id, e.clientX, e.clientY);
-                } else if (!editingNodeId && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-                    // 通常ドラッグでノード移動（修飾キーなしの場合のみ）
-                    e.preventDefault();
-                    e.stopPropagation();
-                    startNodeDrag(node.id, e.clientX, e.clientY, nodeEl);
-                }
-            });
-            
-            container.appendChild(nodeEl);
-            
-            // 子ノードを描画
-            for (const child of node.children) {
-                renderNodes(child, container, positions);
+                    startNodeDrag(nodeData.id, e.clientX, e.clientY, nodeElement);
+                });
+
+            })(node, el);
+
+            container.appendChild(el);
+            for (var i = 0; i < node.children.length; i++) {
+                renderNodes(node.children[i], container, positions);
             }
         }
 
         function renderLines(node, svg, positions) {
-            const parentPos = positions[node.id];
-            if (!parentPos) return;
-            
-            // SVGのオフセット（transformで-5000pxずらしているため）
-            const svgOffset = 5000;
-            
-            for (const child of node.children) {
-                const childPos = positions[child.id];
-                if (!childPos) continue;
-                
-                const startX = parentPos.x + parentPos.width + svgOffset;
-                const startY = parentPos.y + svgOffset;
-                const endX = childPos.x + svgOffset;
-                const endY = childPos.y + svgOffset;
-                
-                // ベジェ曲線で接続
-                const midX = startX + (endX - startX) / 2;
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`);
+            var pp = positions[node.id];
+            if (!pp) return;
+            var off = 5000;
+            for (var i = 0; i < node.children.length; i++) {
+                var child = node.children[i];
+                var cp = positions[child.id];
+                if (!cp) continue;
+                var sx = pp.x + pp.width + off, sy = pp.y + off;
+                var ex = cp.x + off, ey = cp.y + off;
+                var mx = sx + (ex - sx) / 2;
+                var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M ' + sx + ' ' + sy + ' C ' + mx + ' ' + sy + ', ' + mx + ' ' + ey + ', ' + ex + ' ' + ey);
                 path.setAttribute('class', 'connection-line');
-                
-                // カスタム線色の場合
-                if (child.lineColor && child.lineColor !== '#999999') {
-                    path.style.stroke = child.lineColor;
-                }
-                
-                // 太線の場合
-                if (child.thickLine) {
-                    path.style.strokeWidth = '5px';
-                    if (!child.lineColor || child.lineColor === '#999999') {
-                        path.style.stroke = '#333';
-                    }
-                }
-                
-                // グレーアウトの場合（他のスタイルを上書き）
-                if (child.grayout) {
-                    path.style.stroke = '#ccc';
-                }
-                
                 svg.appendChild(path);
-                
-                // 子の子も描画
                 renderLines(child, svg, positions);
             }
         }
 
-        // 選択中のリンクID
-        let selectedLinkIndex = null;
-
-        // ノード間リンク（赤色点線）を描画
-        function renderNodeLinks(svg, positions) {
-            const svgOffset = 5000;
-            const dotsSvg = document.getElementById('dotsSvg');
-            
-            // 前面SVGもクリア
-            dotsSvg.innerHTML = '';
-            
-            nodeLinks.forEach((link, index) => {
-                const fromPos = positions[link.fromId];
-                const toPos = positions[link.toId];
-                if (!fromPos || !toPos) return;
-                
-                // ノードの位置を計算
-                const fromCenterX = fromPos.x + fromPos.width / 2 + svgOffset;
-                const fromCenterY = fromPos.y + svgOffset;
-                const toCenterX = toPos.x + toPos.width / 2 + svgOffset;
-                const toCenterY = toPos.y + svgOffset;
-                
-                // 丸ポチのサイズ
-                const dotRadius = 8;
-                
-                // ノードの端（上端）から丸ポチを配置するためのオフセット
-                const fromY = fromCenterY - 25; // ノードの上端より少し上
-                const toY = toCenterY - 25;     // ノードの上端より少し上
-                const fromX = fromCenterX;
-                const toX = toCenterX;
-                
-                // ベジェ曲線で接続
-                const midX = (fromX + toX) / 2;
-                const midY = (fromY + toY) / 2 - 40; // 少し上にカーブ
-                
-                // === 点線部分（背面SVGに描画） ===
-                const linkGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                linkGroup.setAttribute('class', 'link-group');
-                linkGroup.setAttribute('data-link-index', index);
-                linkGroup.style.cursor = 'pointer';
-                
-                // クリック検出用の太い透明パス
-                const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                hitArea.setAttribute('d', `M ${fromX} ${fromY} Q ${midX} ${midY}, ${toX} ${toY}`);
-                hitArea.setAttribute('stroke', 'transparent');
-                hitArea.setAttribute('stroke-width', '20');
-                hitArea.setAttribute('fill', 'none');
-                hitArea.style.pointerEvents = 'stroke';
-                linkGroup.appendChild(hitArea);
-                
-                // 実際の点線パス
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', `M ${fromX} ${fromY} Q ${midX} ${midY}, ${toX} ${toY}`);
-                path.setAttribute('class', 'link-line');
-                
-                // 選択状態の場合は太くする
-                if (selectedLinkIndex === index) {
-                    path.style.strokeWidth = '4px';
-                    path.style.stroke = '#c62828';
-                }
-                
-                linkGroup.appendChild(path);
-                
-                // クリックイベント
-                linkGroup.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectLink(index);
-                });
-                
-                svg.appendChild(linkGroup);
-                
-                // === 丸ポチ部分（前面SVGに描画） ===
-                const dotGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                dotGroup.setAttribute('class', 'dot-group');
-                dotGroup.setAttribute('data-link-index', index);
-                dotGroup.style.cursor = 'pointer';
-                
-                // 始点の丸ポチ（fromノード側）
-                const startDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                startDot.setAttribute('cx', fromX);
-                startDot.setAttribute('cy', fromY);
-                startDot.setAttribute('r', dotRadius);
-                startDot.setAttribute('fill', selectedLinkIndex === index ? '#c62828' : '#e53935');
-                startDot.setAttribute('stroke', '#fff');
-                startDot.setAttribute('stroke-width', '2');
-                dotGroup.appendChild(startDot);
-                
-                // 終点の丸ポチ（toノード側）
-                const endDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                endDot.setAttribute('cx', toX);
-                endDot.setAttribute('cy', toY);
-                endDot.setAttribute('r', dotRadius);
-                endDot.setAttribute('fill', selectedLinkIndex === index ? '#c62828' : '#e53935');
-                endDot.setAttribute('stroke', '#fff');
-                endDot.setAttribute('stroke-width', '2');
-                dotGroup.appendChild(endDot);
-                
-                // 丸ポチクリックでもリンク選択
-                dotGroup.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectLink(index);
-                });
-                
-                dotsSvg.appendChild(dotGroup);
-            });
-        }
-        
-        // リンクを選択
-        function selectLink(index) {
-            if (selectedLinkIndex === index) {
-                // 同じリンクをクリックした場合は選択解除
-                selectedLinkIndex = null;
-            } else {
-                selectedLinkIndex = index;
-                // ノードの選択を解除
-                selectedNodeIds.clear();
-            }
-            render();
-        }
-        
-        // 選択中のリンクを削除
-        function deleteSelectedLink() {
-            if (selectedLinkIndex !== null && selectedLinkIndex < nodeLinks.length) {
-                nodeLinks.splice(selectedLinkIndex, 1);
-                selectedLinkIndex = null;
-                render();
-                showToast('リンクを削除しました');
-            }
-        }
-
-        // ドラッグ中のプレビュー線を描画
-        function renderDragPreview(svg, positions) {
-            if (!dragState.isDragging || !dragState.fromNodeId) return;
-            
-            const svgOffset = 5000;
-            const fromPos = positions[dragState.fromNodeId];
-            if (!fromPos) return;
-            
-            const fromX = fromPos.x + fromPos.width / 2 + svgOffset;
-            const fromY = fromPos.y + svgOffset;
-            
-            // マウス位置をキャンバス座標に変換
-            const toX = (dragState.currentX - viewState.panX) / viewState.zoom + svgOffset;
-            const toY = (dragState.currentY - viewState.panY) / viewState.zoom + svgOffset;
-            
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', `M ${fromX} ${fromY} L ${toX} ${toY}`);
-            path.setAttribute('class', 'link-line-preview');
-            path.setAttribute('id', 'dragPreviewLine');
-            svg.appendChild(path);
-        }
-
         // ========================================
-        // View Controls (Pan & Zoom)
+        // View Controls
         // ========================================
 
         function updateView() {
-            const inner = document.getElementById('canvasInner');
-            inner.style.transform = `translate(${viewState.panX}px, ${viewState.panY}px) scale(${viewState.zoom})`;
-            document.getElementById('zoomLevel').textContent = Math.round(viewState.zoom * 100) + '%';
-        }
-
-        function zoomIn() {
-            viewState.zoom = Math.min(2, viewState.zoom + 0.1);
-            updateView();
-        }
-
-        function zoomOut() {
-            viewState.zoom = Math.max(0.3, viewState.zoom - 0.1);
-            updateView();
+            var inner = document.getElementById('canvasInner');
+            inner.style.transform = 'translate(' + viewState.panX + 'px, ' + viewState.panY + 'px) scale(' + viewState.zoom + ')';
         }
 
         function resetView() {
-            const container = document.getElementById('canvasContainer');
+            var container = document.getElementById('canvasContainer');
             viewState.zoom = 1;
             viewState.panX = container.clientWidth / 2 - 75;
             viewState.panY = container.clientHeight / 2;
@@ -2765,228 +1617,18 @@
         }
 
         // ========================================
-        // Import / Export
-        // ========================================
-
-        function exportText() {
-            // チェックボックスの状態を反映
-            document.getElementById('exportShowEmoji').checked = exportOptions.showEmoji;
-            document.getElementById('exportShowLines').checked = exportOptions.showIndentLines;
-            
-            updateExportPreview();
-            document.getElementById('exportModal').classList.add('active');
-        }
-
-        function updateExportPreview() {
-            exportOptions.showEmoji = document.getElementById('exportShowEmoji').checked;
-            exportOptions.showIndentLines = document.getElementById('exportShowLines').checked;
-            
-            const text = nodeToText(mindMapData.root, 0, []);
-            document.getElementById('exportTextarea').value = text;
-        }
-
-        function nodeToText(node, level, parentContinues) {
-            let result = '';
-            const icon = exportOptions.showEmoji ? levelIcons[Math.min(level + 1, 4)] + ' ' : '';
-            
-            if (level === 0) {
-                // ルートノード
-                result = `${icon}${node.text}\n`;
-            } else {
-                // 前置きの縦線
-                let prefix = '';
-                for (let i = 0; i < level - 1; i++) {
-                    if (exportOptions.showIndentLines) {
-                        prefix += parentContinues[i] ? '│   ' : '    ';
-                    } else {
-                        prefix += '    ';
-                    }
-                }
-                
-                // 接続記号
-                const isLast = parentContinues[level - 1] === false;
-                let connector = '';
-                if (exportOptions.showIndentLines) {
-                    connector = isLast ? '└─ ' : '├─ ';
-                } else {
-                    connector = '    ';
-                }
-                
-                result = `${prefix}${connector}${icon}${node.text}\n`;
-            }
-            
-            // 子ノードを処理
-            for (let i = 0; i < node.children.length; i++) {
-                const isLastChild = i === node.children.length - 1;
-                const newParentContinues = [...parentContinues, !isLastChild];
-                result += nodeToText(node.children[i], level + 1, newParentContinues);
-            }
-            
-            return result;
-        }
-
-        function copyExportText() {
-            const textarea = document.getElementById('exportTextarea');
-            textarea.select();
-            document.execCommand('copy');
-            showToast('クリップボードにコピーしました');
-        }
-
-        function closeExportModal() {
-            document.getElementById('exportModal').classList.remove('active');
-        }
-
-        function showImportModal() {
-            document.getElementById('importTextarea').value = '';
-            document.getElementById('importModal').classList.add('active');
-            document.getElementById('importTextarea').focus();
-        }
-
-        function closeImportModal() {
-            document.getElementById('importModal').classList.remove('active');
-        }
-
-        function importText() {
-            const text = document.getElementById('importTextarea').value.trim();
-            if (!text) {
-                showToast('テキストを入力してください');
-                return;
-            }
-            
-            try {
-                const newData = parseTextToMindMap(text);
-                saveState();
-                mindMapData = newData;
-                render();
-                selectNode('root');
-                closeImportModal();
-                showToast('読み込みが完了しました');
-            } catch (e) {
-                console.error(e);
-                showToast('テキストの解析に失敗しました');
-            }
-        }
-
-        function parseTextToMindMap(text) {
-            const lines = text.split('\n').filter(line => line.trim());
-            if (lines.length === 0) {
-                throw new Error('空のテキスト');
-            }
-            
-            // 各行のインデントレベルとテキストを解析
-            const parsed = lines.map(line => {
-                // 罫線記号を除去してインデントを計算
-                const cleanedLine = line.replace(/[│├└─┐┘┌┬┴┼]/g, ' ');
-                
-                // インデントレベルを計算（タブまたはスペース4つで1レベル）
-                let indentLevel = 0;
-                let i = 0;
-                while (i < cleanedLine.length) {
-                    if (cleanedLine[i] === '\t') {
-                        indentLevel++;
-                        i++;
-                    } else if (cleanedLine.substring(i, i + 4) === '    ') {
-                        indentLevel++;
-                        i += 4;
-                    } else if (cleanedLine[i] === ' ') {
-                        i++;
-                    } else {
-                        break;
-                    }
-                }
-                
-                // テキストを抽出（絵文字・記号を除去）
-                let nodeText = cleanedLine.substring(i).trim();
-                // 一般的な絵文字やアイコンを除去
-                nodeText = nodeText.replace(/^[🐔🐤🐣🥚🔵🔴🟢🟡⚪⚫●○◆◇■□▲△▼▽★☆→←↑↓📌📍🔷🔶💡💎🎯📎🔗✅❌⭐🌟]\s*/u, '');
-                nodeText = nodeText.trim() || '空のノード';
-                
-                return { level: indentLevel, text: nodeText };
-            });
-            
-            // ツリー構造を構築
-            const root = {
-                id: 'root',
-                text: parsed[0].text,
-                children: []
-            };
-            
-            nodeIdCounter = 0;
-            const stack = [{ node: root, level: parsed[0].level }];
-            
-            for (let i = 1; i < parsed.length; i++) {
-                const { level, text } = parsed[i];
-                const newNode = {
-                    id: generateId(),
-                    text: text,
-                    children: []
-                };
-                
-                // 適切な親を見つける
-                while (stack.length > 1 && stack[stack.length - 1].level >= level) {
-                    stack.pop();
-                }
-                
-                // 親に追加
-                stack[stack.length - 1].node.children.push(newNode);
-                stack.push({ node: newNode, level: level });
-            }
-            
-            return { root };
-        }
-
-        // ========================================
-        // Help Modal
-        // ========================================
-
-        function showHelpModal() {
-            document.getElementById('helpModal').classList.add('active');
-        }
-
-        function closeHelpModal() {
-            document.getElementById('helpModal').classList.remove('active');
-        }
-
-        // ========================================
-        // Event Handlers
+        // Keyboard Handler
         // ========================================
 
         function handleKeyDown(e) {
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            const cmdKey = isMac ? e.metaKey : e.ctrlKey;
-            
-            // モーダルが開いているときは無視
-            if (document.querySelector('.modal-overlay.active')) {
-                if (e.key === 'Escape') {
-                    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-                }
-                return;
-            }
-            
-            // Cmd+Option+キー のショートカット（e.codeで判定）
-            if (cmdKey && e.altKey && !editingNodeId) {
-                switch (e.code) {
-                    case 'KeyA':
-                        e.preventDefault();
-                        toggleTextColor();
-                        return;
-                    case 'KeyY':
-                        e.preventDefault();
-                        toggleBgColor();
-                        return;
-                    case 'KeyS':
-                        e.preventDefault();
-                        toggleThickLine();
-                        return;
-                    case 'KeyG':
-                        e.preventDefault();
-                        toggleGrayout();
-                        return;
-                }
-            }
-            
-            // 編集中の特別処理
+            var isMac = /Mac/.test(navigator.platform);
+            var cmdKey = isMac ? e.metaKey : e.ctrlKey;
+
+            // While editing
             if (editingNodeId) {
+                // IME入力中（ローマ字→日本語変換）のキーは無視する
+                if (e.isComposing || e.keyCode === 229) return;
+
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     finishEditing();
@@ -2996,234 +1638,249 @@
                 } else if (e.key === 'Tab') {
                     e.preventDefault();
                     finishEditing();
-                    if (e.shiftKey) {
-                        goToParent();
-                    } else {
-                        const currentId = getSelectedNodeId();
-                        if (currentId) addChildNode(currentId);
-                    }
+                    if (e.shiftKey) { goToParent(); }
+                    else { var cid = getSelectedNodeId(); if (cid) addChildNode(cid); }
+                } else if (cmdKey && (e.key === 'z' || e.key === 'Z')) {
+                    e.preventDefault(); finishEditing(); undo();
+                } else if (cmdKey && (e.key === 'y' || e.key === 'Y')) {
+                    e.preventDefault(); finishEditing(); redo();
                 }
                 return;
             }
-            
-            // ショートカットキー処理
-            const currentId = getSelectedNodeId();
-            
+
+            var currentId = getSelectedNodeId();
+
             switch (e.key) {
                 case 'Enter':
                     e.preventDefault();
-                    if (currentId) {
-                        addSiblingNode(currentId);
-                    }
+                    if (currentId) addSiblingNode(currentId);
                     break;
-                    
                 case 'Tab':
                     e.preventDefault();
-                    if (e.shiftKey) {
-                        goToParent();
-                    } else if (currentId) {
-                        addChildNode(currentId);
-                    }
+                    if (e.shiftKey) goToParent();
+                    else if (currentId) addChildNode(currentId);
                     break;
-                    
                 case 'Delete':
                 case 'Backspace':
                     e.preventDefault();
-                    // リンクが選択されている場合はリンクを削除
-                    if (selectedLinkIndex !== null) {
-                        deleteSelectedLink();
-                    } else if (currentId && currentId !== 'root') {
-                        deleteNode(currentId);
-                    }
+                    if (selectedNodeIds.size > 1) deleteSelectedNodes();
+                    else if (currentId && currentId !== 'root') deleteNode(currentId);
                     break;
-                    
                 case 'F2':
                     e.preventDefault();
-                    if (currentId) {
-                        startEditing(currentId);
-                    }
+                    if (currentId) startEditing(currentId);
                     break;
-                    
                 case 'ArrowUp':
                     e.preventDefault();
-                    if (cmdKey) {
-                        if (currentId) moveNodeUp(currentId);
-                    } else {
-                        navigateUp();
-                    }
+                    if (cmdKey) { if (currentId) moveNodeUp(currentId); }
+                    else navigateUp();
                     break;
-                    
                 case 'ArrowDown':
                     e.preventDefault();
-                    if (cmdKey) {
-                        if (currentId) moveNodeDown(currentId);
-                    } else {
-                        navigateDown();
-                    }
+                    if (cmdKey) { if (currentId) moveNodeDown(currentId); }
+                    else navigateDown();
                     break;
-                    
                 case 'ArrowLeft':
                     e.preventDefault();
-                    if (cmdKey) {
-                        if (currentId) promoteNode(currentId);
-                    } else {
-                        navigateLeft();
-                    }
+                    if (cmdKey) { if (currentId) promoteNode(currentId); }
+                    else navigateLeft();
                     break;
-                    
                 case 'ArrowRight':
                     e.preventDefault();
-                    if (cmdKey) {
-                        if (currentId) demoteNode(currentId);
-                    } else {
-                        navigateRight();
-                    }
+                    if (cmdKey) { if (currentId) demoteNode(currentId); }
+                    else navigateRight();
                     break;
-                    
-                case 'z':
-                case 'Z':
-                    if (cmdKey) {
-                        e.preventDefault();
-                        undo();
-                    }
+                case 'z': case 'Z':
+                    if (cmdKey) { e.preventDefault(); undo(); }
                     break;
-                    
-                case 'y':
-                case 'Y':
-                    if (cmdKey) {
-                        e.preventDefault();
-                        redo();
-                    }
+                case 'y': case 'Y':
+                    if (cmdKey) { e.preventDefault(); redo(); }
                     break;
-                    
-                case 'a':
-                case 'A':
-                    if (cmdKey) {
-                        // Cmd+A: 全選択
-                        e.preventDefault();
-                        selectAll();
-                    }
+                case 'a': case 'A':
+                    if (cmdKey) { e.preventDefault(); selectAll(); }
                     break;
-                    
-                case 'b':
-                case 'B':
-                    if (cmdKey) {
-                        // Cmd+B: 太字トグル
-                        e.preventDefault();
-                        toggleBold();
-                    }
+                case 'c': case 'C':
+                    if (cmdKey) { e.preventDefault(); copySelectedNodes(); }
                     break;
-                    
-                case 'c':
-                case 'C':
-                    if (cmdKey) {
-                        e.preventDefault();
-                        copyNode();
-                    }
+                case 'v': case 'V':
+                    if (cmdKey) { e.preventDefault(); pasteNode(); }
                     break;
-                    
-                case 'v':
-                case 'V':
-                    if (cmdKey) {
-                        e.preventDefault();
-                        pasteNode();
-                    }
+                case 'x': case 'X':
+                    if (cmdKey) { e.preventDefault(); cutSelectedNodes(); }
                     break;
-                    
                 case 'Escape':
                     clearSelection();
                     break;
             }
         }
 
-        // パン操作
-        function initPanZoom() {
-            const canvas = document.getElementById('canvas');
-            
-            // 背景をクリックしたらパン開始
-            canvas.addEventListener('mousedown', (e) => {
-                // ドラッグ中はパンしない
-                if (dragState.isDragging || nodeDragState.isDragging) return;
-                
-                // 背景部分（canvas自体、canvasInner、SVG）をクリックした場合のみパン
-                const isBackground = e.target === canvas || 
-                                     e.target.id === 'canvasInner' || 
-                                     e.target.tagName === 'svg' ||
-                                     e.target.classList.contains('lines-svg') ||
-                                     e.target.classList.contains('dots-svg');
-                
-                if (isBackground) {
+        // ========================================
+        // Canvas Interaction: Pan, Zoom, Lasso
+        // ========================================
+
+        function initCanvasInteraction() {
+            var canvas = document.getElementById('canvas');
+
+            // --- Mousedown ---
+            canvas.addEventListener('mousedown', function(e) {
+                if (nodeDragState.isDragging) return;
+
+                var isBackground = (e.target === canvas ||
+                    e.target.id === 'canvasInner' ||
+                    e.target.tagName === 'svg' ||
+                    e.target.classList.contains('lines-svg'));
+
+                if (!isBackground) return;
+
+                // Right-click or middle-click: pan
+                if (e.button === 2 || e.button === 1) {
+                    e.preventDefault();
                     viewState.isPanning = true;
                     viewState.startX = e.clientX - viewState.panX;
                     viewState.startY = e.clientY - viewState.panY;
                     canvas.classList.add('panning');
-                }
-            });
-            
-            canvas.addEventListener('mousemove', (e) => {
-                // リンクドラッグ中
-                if (dragState.isDragging) {
-                    updateLinkDrag(e.clientX, e.clientY);
                     return;
                 }
-                
-                // ノードドラッグ中はパンしない
+
+                // Left-click on background: start lasso
+                if (e.button === 0) {
+                    finishEditing();
+                    startLasso(e.clientX, e.clientY);
+                }
+            });
+
+            // --- Mousemove ---
+            canvas.addEventListener('mousemove', function(e) {
                 if (nodeDragState.isDragging) return;
-                
-                // パン中：背景を掴んで移動
                 if (viewState.isPanning) {
                     viewState.panX = e.clientX - viewState.startX;
                     viewState.panY = e.clientY - viewState.startY;
                     updateView();
-                }
-            });
-            
-            canvas.addEventListener('mouseup', (e) => {
-                // リンクドラッグ終了
-                if (dragState.isDragging) {
-                    endLinkDrag(e.clientX, e.clientY);
                     return;
                 }
-                
-                viewState.isPanning = false;
-                canvas.classList.remove('panning');
-            });
-            
-            canvas.addEventListener('mouseleave', (e) => {
-                // リンクドラッグ中にキャンバス外に出た場合
-                if (dragState.isDragging) {
-                    endLinkDrag(e.clientX, e.clientY);
+                if (lassoState.active) {
+                    updateLasso(e.clientX, e.clientY);
                 }
-                
-                // ノードドラッグ中にキャンバス外に出た場合
-                if (nodeDragState.isDragging) {
-                    endNodeDrag(e.clientX, e.clientY);
-                }
-                
-                viewState.isPanning = false;
-                canvas.classList.remove('panning');
             });
-            
-            // ホイールでズーム
-            canvas.addEventListener('wheel', (e) => {
+
+            // --- Mouseup ---
+            canvas.addEventListener('mouseup', function(e) {
+                if (viewState.isPanning) {
+                    viewState.isPanning = false;
+                    canvas.classList.remove('panning');
+                    return;
+                }
+                if (lassoState.active) {
+                    endLasso();
+                }
+            });
+
+            // --- Click on background: clear selection ---
+            canvas.addEventListener('click', function(e) {
+                var isBackground = (e.target === canvas ||
+                    e.target.id === 'canvasInner' ||
+                    e.target.tagName === 'svg' ||
+                    e.target.classList.contains('lines-svg'));
+
+                if (!isBackground) return;
+
+                // Don't clear if lasso just selected nodes
+                if (lassoState.didSelect) {
+                    lassoState.didSelect = false;
+                    return;
+                }
+                finishEditing();
+                clearSelection();
+            });
+
+            // --- Mouseleave ---
+            canvas.addEventListener('mouseleave', function() {
+                if (viewState.isPanning) {
+                    viewState.isPanning = false;
+                    canvas.classList.remove('panning');
+                }
+                if (lassoState.active) endLasso();
+                if (nodeDragState.isDragging) endNodeDrag();
+            });
+
+            // --- Context menu prevention ---
+            canvas.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
-                const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                viewState.zoom = Math.max(0.3, Math.min(2, viewState.zoom + delta));
-                updateView();
-            }, { passive: false });
-            
-            // キャンバスクリックで選択解除
-            canvas.addEventListener('click', (e) => {
-                const isBackground = e.target === canvas || 
-                                     e.target.id === 'canvasInner' || 
-                                     e.target.tagName === 'svg' ||
-                                     e.target.classList.contains('lines-svg') ||
-                                     e.target.classList.contains('dots-svg');
-                if (isBackground) {
-                    finishEditing();
-                    clearSelection();
-                }
             });
+
+            // --- Wheel: zoom (mouse scroll wheel) / pan (trackpad 2-finger) ---
+            canvas.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                var container = document.getElementById('canvasContainer');
+                var rect = container.getBoundingClientRect();
+                var mouseX = e.clientX - rect.left;
+                var mouseY = e.clientY - rect.top;
+
+                // ctrlKey is set by browser during trackpad pinch gesture
+                if (e.ctrlKey) {
+                    // Pinch zoom
+                    var zoomDelta = -e.deltaY * 0.01;
+                    applyZoom(mouseX, mouseY, zoomDelta);
+                    return;
+                }
+
+                // Trackpad 2-finger scroll → pan
+                // Mouse scroll wheel → zoom (deltaMode = 1 for line-based, or large deltaY)
+                if (e.deltaMode === 0 && (Math.abs(e.deltaX) > 1 || Math.abs(e.deltaY) < 80)) {
+                    // Likely trackpad: pan
+                    viewState.panX -= e.deltaX;
+                    viewState.panY -= e.deltaY;
+                    updateView();
+                } else {
+                    // Mouse scroll wheel: zoom
+                    var zoomDelta = e.deltaY > 0 ? -0.1 : 0.1;
+                    applyZoom(mouseX, mouseY, zoomDelta);
+                }
+            }, { passive: false });
+
+            // --- Touch events for pinch-zoom ---
+            var lastTouchDist = 0;
+            var lastTouchCenter = { x: 0, y: 0 };
+
+            canvas.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    var t1 = e.touches[0], t2 = e.touches[1];
+                    lastTouchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                    lastTouchCenter = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+                }
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    var t1 = e.touches[0], t2 = e.touches[1];
+                    var dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                    var center = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+                    var scale = dist / lastTouchDist;
+                    var oldZoom = viewState.zoom;
+                    var newZoom = Math.max(0.2, Math.min(3, oldZoom * scale));
+                    var actualScale = newZoom / oldZoom;
+                    viewState.panX = center.x - actualScale * (center.x - viewState.panX);
+                    viewState.panY = center.y - actualScale * (center.y - viewState.panY);
+                    viewState.zoom = newZoom;
+                    viewState.panX += center.x - lastTouchCenter.x;
+                    viewState.panY += center.y - lastTouchCenter.y;
+                    lastTouchDist = dist;
+                    lastTouchCenter = center;
+                    updateView();
+                }
+            }, { passive: false });
+        }
+
+        function applyZoom(mouseX, mouseY, zoomDelta) {
+            var oldZoom = viewState.zoom;
+            var newZoom = Math.max(0.2, Math.min(3, oldZoom + zoomDelta));
+            var scale = newZoom / oldZoom;
+            viewState.panX = mouseX - scale * (mouseX - viewState.panX);
+            viewState.panY = mouseY - scale * (mouseY - viewState.panY);
+            viewState.zoom = newZoom;
+            updateView();
         }
 
         // ========================================
@@ -3231,25 +1888,38 @@
         // ========================================
 
         function init() {
-            // 初期状態を履歴に保存
             saveState();
-            
-            // キーボードイベント
             document.addEventListener('keydown', handleKeyDown);
-            
-            // パン・ズーム初期化
-            initPanZoom();
-            
-            // 初期描画
+            initCanvasInteraction();
+            document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+            document.getElementById('previewBtn').addEventListener('click', showPreview);
+            document.getElementById('previewCopyBtn').addEventListener('click', function() {
+                copyToClipboard();
+            });
+            document.getElementById('previewCloseBtn').addEventListener('click', hidePreview);
+            document.getElementById('previewOverlay').addEventListener('click', function(e) {
+                if (e.target === this) hidePreview();
+            });
+            // Update preview in real-time when dropdowns change while preview is open
+            document.getElementById('copyFormat').addEventListener('change', function() {
+                if (document.getElementById('previewOverlay').classList.contains('show')) showPreview();
+            });
+            document.getElementById('copyBorder').addEventListener('change', function() {
+                if (document.getElementById('previewOverlay').classList.contains('show')) showPreview();
+            });
             resetView();
             render();
-            
-            // ルートノードを選択
             selectNode('root');
+            // Start editing root on first load
+            setTimeout(function() { startEditing('root'); }, 100);
         }
 
-        // DOM読み込み完了後に初期化
         document.addEventListener('DOMContentLoaded', init);
+
+        // Expose for testing/integration
+        window.getCurrentCopyText = getCurrentCopyText;
+
+    })();
     </script>
 </body>
 </html>
