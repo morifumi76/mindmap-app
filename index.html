@@ -105,6 +105,7 @@
             user-select: none;
             transition: box-shadow 0.2s;
             white-space: nowrap;
+            box-sizing: border-box;
         }
 
         .node:hover {
@@ -948,6 +949,8 @@
             var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
             if (textEl) {
                 nodeEl.classList.add('editing');
+                // Remove fixed width so node grows/shrinks with text in real-time
+                nodeEl.style.width = 'auto';
                 textEl.contentEditable = 'true';
                 textEl.focus();
                 var range = document.createRange();
