@@ -433,7 +433,8 @@
     <div class="copy-panel" id="copyPanel">
         <select id="copyFormat" title="出力形式">
             <option value="simple">シンプル</option>
-            <option value="hiyoko">ひよこモード 🐔</option>
+            <option value="hiyoko">ひよこモード 🐥</option>
+            <option value="family">かぞくモード 👶</option>
         </select>
         <select id="copyBorder" title="罫線">
             <option value="none">罫線なし</option>
@@ -480,7 +481,10 @@
         // Global State
         // ========================================
 
-        const levelIcons = { 1: '🐔', 2: '🐤', 3: '🐣', 4: '🥚' };
+        const levelIcons = {
+            hiyoko: { 1: '🐔', 2: '🐤', 3: '🐣', 4: '🥚' },
+            family: { 1: '👴', 2: '👨', 3: '👦', 4: '👶' }
+        };
 
         let mindMapData = {
             root: {
@@ -1154,9 +1158,8 @@
         function getCurrentCopyText() {
             var format = document.getElementById('copyFormat').value;
             var border = document.getElementById('copyBorder').value;
-            var useEmoji = (format === 'hiyoko');
             var useBorder = (border === 'border');
-            return generateCopyText(mindMapData.root, 0, [], useEmoji, useBorder);
+            return generateCopyText(mindMapData.root, 0, [], format, useBorder);
         }
 
         function copyToClipboard() {
@@ -1194,10 +1197,11 @@
             document.getElementById('previewOverlay').classList.remove('show');
         }
 
-        function generateCopyText(node, level, parentContinues, useEmoji, useBorder) {
+        function generateCopyText(node, level, parentContinues, format, useBorder) {
             var result = '';
             var iconLevel = Math.min(level + 1, 4);
-            var icon = useEmoji ? (levelIcons[iconLevel] + ' ') : '';
+            var icons = levelIcons[format];
+            var icon = icons ? (icons[iconLevel] + ' ') : '';
 
             // ---- Root (level 0) ----
             if (level === 0) {
@@ -1228,7 +1232,7 @@
                 var isLastChild = (i === node.children.length - 1);
                 var newContinues = parentContinues.slice();
                 newContinues.push(!isLastChild);
-                result += generateCopyText(node.children[i], level + 1, newContinues, useEmoji, useBorder);
+                result += generateCopyText(node.children[i], level + 1, newContinues, format, useBorder);
             }
 
             // ---- Separator blank line between sibling groups (border mode only) ----
