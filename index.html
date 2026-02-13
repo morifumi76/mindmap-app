@@ -96,7 +96,6 @@
         .node {
             position: absolute;
             min-width: 120px;
-            max-width: 300px;
             padding: 10px 16px;
             background: var(--node-bg);
             border: 2px solid var(--node-border);
@@ -105,9 +104,7 @@
             cursor: pointer;
             user-select: none;
             transition: box-shadow 0.2s;
-            white-space: normal;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            white-space: nowrap;
         }
 
         .node:hover {
@@ -152,8 +149,7 @@
             outline: none;
             min-width: 50px;
             display: block;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            white-space: pre;
         }
 
         .node-text[contenteditable="true"] {
@@ -969,7 +965,14 @@
             var textEl = nodeEl ? nodeEl.querySelector('.node-text') : null;
             var textChanged = false;
             if (textEl) {
-                var newText = textEl.textContent.trim() || '空のノード';
+                // Convert innerHTML <br> tags to \n for storage
+                var html = textEl.innerHTML;
+                // Replace <br> variants with \n
+                var newText = html.replace(/<br\s*\/?>/gi, '\n');
+                // Strip any other HTML tags
+                var tmp = document.createElement('div');
+                tmp.innerHTML = newText;
+                newText = tmp.textContent.replace(/\u200B/g, '').trim() || '空のノード';
                 var result = findNode(editingNodeId);
                 if (result && result.node.text !== newText) {
                     textChanged = true;
@@ -1510,7 +1513,12 @@
             container.appendChild(measurer);
 
             function measure(node) {
-                measurerText.textContent = node.text;
+                // Render \n as <br> for accurate measurement
+                if (node.text.indexOf('\n') >= 0) {
+                    measurerText.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+                } else {
+                    measurerText.textContent = node.text;
+                }
                 // Root nodes have larger font
                 if (node.id === 'root') {
                     measurer.classList.add('root');
@@ -1578,7 +1586,12 @@
             el.style.transform = 'translateY(-50%)';
             var textEl = document.createElement('span');
             textEl.className = 'node-text';
-            textEl.textContent = node.text;
+            // Render \n as <br> for display
+            if (node.text.indexOf('\n') >= 0) {
+                textEl.innerHTML = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            } else {
+                textEl.textContent = node.text;
+            }
             el.appendChild(textEl);
 
             // Use a closure to capture node reference
@@ -1702,6 +1715,25 @@
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     finishEditing();
+                } else if (e.key === 'Enter' && e.shiftKey) {
+                    // Shift+Enter: insert line break
+                    e.preventDefault();
+                    var sel = window.getSelection();
+                    if (sel.rangeCount) {
+                        var range = sel.getRangeAt(0);
+                        range.deleteContents();
+                        var br = document.createElement('br');
+                        range.insertNode(br);
+                        // Insert a zero-width space after <br> so cursor has a text node to land in
+                        var textNode = document.createTextNode('\u200B');
+                        br.parentNode.insertBefore(textNode, br.nextSibling);
+                        // Move cursor into the text node after <br>
+                        range = document.createRange();
+                        range.setStart(textNode, 1);
+                        range.setEnd(textNode, 1);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     finishEditing();
