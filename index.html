@@ -433,7 +433,7 @@
         </select>
         <select id="copyBorder" title="罫線">
             <option value="none">罫線なし</option>
-            <option value="border">罫線あり</option>
+            <option value="border" selected>罫線あり</option>
         </select>
         <button class="preview-btn" id="previewBtn" title="プレビュー">
             👁 プレビュー
@@ -565,8 +565,7 @@
             } else {
                 undoIndex++;
             }
-            // Auto-save to localStorage
-            saveToLocalStorage();
+            // Note: localStorage save is handled in render() to capture post-mutation state
         }
 
         function saveToLocalStorage() {
@@ -1491,6 +1490,8 @@
             renderLines(mindMapData.root, svg, positions);
             updateSelectionDisplay();
             updateView();
+            // Auto-save to localStorage after every render (post-mutation state)
+            saveToLocalStorage();
         }
 
         // Measure actual rendered width AND height of each node's text
