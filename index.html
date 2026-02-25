@@ -106,6 +106,7 @@
             transition: box-shadow 0.2s;
             white-space: nowrap;
             box-sizing: border-box;
+            overflow: visible;
         }
 
         .node:hover {
@@ -159,6 +160,55 @@
             padding: 2px 4px;
             margin: -2px -4px;
             border-radius: 3px;
+        }
+
+        /* ========================================
+           Collapse/Expand Indicator
+           ======================================== */
+        .collapse-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e8eef5;
+            border: 1px solid #c0d0e0;
+            color: #4a90d9;
+            font-size: 10px;
+            cursor: pointer;
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            transition: background 0.2s;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .collapse-toggle:hover {
+            background: #d0dff0;
+        }
+
+        .collapse-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            background: #ff9800;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 0 4px;
+            position: absolute;
+            right: -12px;
+            top: -8px;
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
         }
 
         /* ========================================
@@ -531,6 +581,8 @@
         let clipboard = null;
         let clipboardIsCut = false;
 
+        let collapsedNodeIds = new Set();
+
         let nodeIdCounter = 0;
 
         // Drag reparenting state
@@ -601,7 +653,11 @@
 
         function saveToLocalStorage() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(mindMapData));
+                var dataToSave = {
+                    mindMap: mindMapData,
+                    collapsed: Array.from(collapsedNodeIds)
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
             } catch(e) { /* quota exceeded or private mode */ }
         }
 
@@ -610,6 +666,14 @@
                 var data = localStorage.getItem(STORAGE_KEY);
                 if (data) {
                     var parsed = JSON.parse(data);
+                    // New format: { mindMap: {...}, collapsed: [...] }
+                    if (parsed && parsed.mindMap && parsed.mindMap.root && parsed.mindMap.root.id === 'root') {
+                        if (parsed.collapsed && Array.isArray(parsed.collapsed)) {
+                            collapsedNodeIds = new Set(parsed.collapsed);
+                        }
+                        return parsed.mindMap;
+                    }
+                    // Old format: direct mindMapData
                     if (parsed && parsed.root && parsed.root.id === 'root') {
                         return parsed;
                     }
@@ -645,6 +709,7 @@
             editingNodeId = null;
             clipboard = null;
             clipboardIsCut = false;
+            collapsedNodeIds.clear();
             try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
             saveState();
             render();
@@ -918,41 +983,81 @@
             return nodes;
         }
 
-        // Navigate UP: same-level siblings only
+        // Collect all visible nodes at a given depth level in visual (layout) order
+        function getNodesAtLevel(targetLevel, node, currentLevel) {
+            if (node === undefined) node = mindMapData.root;
+            if (currentLevel === undefined) currentLevel = 1;
+            var result = [];
+            if (currentLevel === targetLevel) {
+                result.push(node);
+                return result;
+            }
+            // If this node is collapsed, its children are hidden — skip them for navigation
+            if (collapsedNodeIds.has(node.id)) return result;
+            for (var i = 0; i < node.children.length; i++) {
+                var childResults = getNodesAtLevel(targetLevel, node.children[i], currentLevel + 1);
+                for (var j = 0; j < childResults.length; j++) {
+                    result.push(childResults[j]);
+                }
+            }
+            return result;
+        }
+
+        // Navigate UP: cross-parent navigation at same depth
         function navigateUp() {
             var cid = getSelectedNodeId();
             if (!cid) { selectNode('root'); return; }
-            var r = findNode(cid);
-            if (r && r.parent && r.index > 0) {
-                selectNode(r.parent.children[r.index - 1].id);
+            var level = getNodeLevel(cid);
+            if (!level || level <= 1) return; // root has no siblings
+            var nodesAtLevel = getNodesAtLevel(level);
+            var idx = -1;
+            for (var i = 0; i < nodesAtLevel.length; i++) {
+                if (nodesAtLevel[i].id === cid) { idx = i; break; }
+            }
+            if (idx > 0) {
+                selectNode(nodesAtLevel[idx - 1].id);
             }
         }
 
-        // Navigate DOWN: same-level siblings only
+        // Navigate DOWN: cross-parent navigation at same depth
         function navigateDown() {
             var cid = getSelectedNodeId();
             if (!cid) { selectNode('root'); return; }
-            var r = findNode(cid);
-            if (r && r.parent && r.index < r.parent.children.length - 1) {
-                selectNode(r.parent.children[r.index + 1].id);
+            var level = getNodeLevel(cid);
+            if (!level || level <= 1) return; // root has no siblings
+            var nodesAtLevel = getNodesAtLevel(level);
+            var idx = -1;
+            for (var i = 0; i < nodesAtLevel.length; i++) {
+                if (nodesAtLevel[i].id === cid) { idx = i; break; }
+            }
+            if (idx >= 0 && idx < nodesAtLevel.length - 1) {
+                selectNode(nodesAtLevel[idx + 1].id);
             }
         }
 
-        // Navigate LEFT: go to parent
+        // Navigate LEFT: collapse if expanded with children, else go to parent
         function navigateLeft() {
             var cid = getSelectedNodeId();
             if (!cid) { selectNode('root'); return; }
             var r = findNode(cid);
-            if (r && r.parent) selectNode(r.parent.id);
+            if (r && r.node.children.length > 0 && !collapsedNodeIds.has(cid)) {
+                toggleCollapse(cid);
+            } else if (r && r.parent) {
+                selectNode(r.parent.id);
+            }
         }
 
-        // Navigate RIGHT: go to first child
+        // Navigate RIGHT: go to first child (or expand if collapsed)
         function navigateRight() {
             var cid = getSelectedNodeId();
             if (!cid) { selectNode('root'); return; }
             var r = findNode(cid);
             if (r && r.node.children.length > 0) {
-                selectNode(r.node.children[0].id);
+                if (collapsedNodeIds.has(cid)) {
+                    toggleCollapse(cid);
+                } else {
+                    selectNode(r.node.children[0].id);
+                }
             }
         }
 
@@ -961,6 +1066,33 @@
             if (!cid || cid === 'root') return;
             var r = findNode(cid);
             if (r && r.parent) selectNode(r.parent.id);
+        }
+
+        // Collapse/Expand functionality
+        function toggleCollapse(nodeId) {
+            if (!nodeId || nodeId === 'root') {
+                // Allow collapsing root too if it has children
+                var r = findNode(nodeId || 'root');
+                if (!r || r.node.children.length === 0) return;
+            }
+            var r = findNode(nodeId);
+            if (!r || r.node.children.length === 0) return;
+            if (collapsedNodeIds.has(nodeId)) {
+                collapsedNodeIds.delete(nodeId);
+            } else {
+                collapsedNodeIds.add(nodeId);
+            }
+            render();
+            selectNode(nodeId);
+        }
+
+        function countDescendants(node) {
+            var count = 0;
+            for (var i = 0; i < node.children.length; i++) {
+                count++;
+                count += countDescendants(node.children[i]);
+            }
+            return count;
         }
 
         function scrollNodeIntoView(nodeId) {
@@ -1595,6 +1727,11 @@
             var nodeWidth = dims.width;
             var nodeHeight = dims.height;
             var hGap = 40, vGap = 16;
+            positions[node.id] = { x: x, y: y, width: nodeWidth, height: nodeHeight, level: level };
+
+            // If collapsed, don't layout children
+            if (collapsedNodeIds.has(node.id)) return positions;
+
             var totalH = 0, childHeights = [];
             for (var i = 0; i < node.children.length; i++) {
                 var ch = calcSubtreeHeight(node.children[i], vGap, nodeDims);
@@ -1602,7 +1739,6 @@
                 totalH += ch;
             }
             if (node.children.length > 1) totalH += (node.children.length - 1) * vGap;
-            positions[node.id] = { x: x, y: y, width: nodeWidth, height: nodeHeight, level: level };
             var childX = x + nodeWidth + hGap;
             var childY = y - totalH / 2;
             for (var i = 0; i < node.children.length; i++) {
@@ -1617,7 +1753,8 @@
         function calcSubtreeHeight(node, gap, nodeDims) {
             var dims = (nodeDims && nodeDims[node.id]) ? nodeDims[node.id] : { width: 150, height: 40 };
             var nodeHeight = dims.height;
-            if (node.children.length === 0) return nodeHeight;
+            // If collapsed, only this node's height matters
+            if (collapsedNodeIds.has(node.id) || node.children.length === 0) return nodeHeight;
             var total = 0;
             for (var i = 0; i < node.children.length; i++) {
                 total += calcSubtreeHeight(node.children[i], gap, nodeDims);
@@ -1678,7 +1815,7 @@
                         }
                     } else if (e.shiftKey) {
                         finishEditing();
-                        rangeSelectNode(nodeData.id);
+                        toggleSelectNode(nodeData.id);
                     } else if (cmdKey) {
                         finishEditing();
                         toggleSelectNode(nodeData.id);
@@ -1709,15 +1846,47 @@
 
             })(node, el);
 
+            // Add collapse/expand toggle for parent nodes
+            if (node.children.length > 0) {
+                var isCollapsed = collapsedNodeIds.has(node.id);
+                var toggleBtn = document.createElement('span');
+                toggleBtn.className = 'collapse-toggle';
+                toggleBtn.textContent = isCollapsed ? '▶' : '▼';
+                toggleBtn.title = isCollapsed ? '展開 (Cmd+.)' : '折りたたみ (Cmd+.)';
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleCollapse(node.id);
+                });
+                toggleBtn.addEventListener('mousedown', function(e) {
+                    e.stopPropagation();
+                });
+                el.appendChild(toggleBtn);
+
+                // Show child count badge when collapsed
+                if (isCollapsed) {
+                    var count = countDescendants(node);
+                    var badge = document.createElement('span');
+                    badge.className = 'collapse-badge';
+                    badge.textContent = '+' + count;
+                    el.appendChild(badge);
+                }
+            }
+
             container.appendChild(el);
-            for (var i = 0; i < node.children.length; i++) {
-                renderNodes(node.children[i], container, positions);
+
+            // Only render children if not collapsed
+            if (!collapsedNodeIds.has(node.id)) {
+                for (var i = 0; i < node.children.length; i++) {
+                    renderNodes(node.children[i], container, positions);
+                }
             }
         }
 
         function renderLines(node, svg, positions) {
             var pp = positions[node.id];
             if (!pp) return;
+            // If collapsed, don't draw lines to hidden children
+            if (collapsedNodeIds.has(node.id)) return;
             var off = 5000;
             for (var i = 0; i < node.children.length; i++) {
                 var child = node.children[i];
@@ -1864,6 +2033,12 @@
                     break;
                 case 'Escape':
                     clearSelection();
+                    break;
+                case '.': case '/':
+                    if (cmdKey) {
+                        e.preventDefault();
+                        if (currentId) toggleCollapse(currentId);
+                    }
                     break;
             }
         }
@@ -2082,6 +2257,10 @@
 
         // Expose for testing/integration
         window.getCurrentCopyText = getCurrentCopyText;
+        window.toggleCollapse = toggleCollapse;
+        window.collapsedNodeIds = collapsedNodeIds;
+        window.getSelectedNodeIds = function() { return selectedNodeIds; };
+        window.getMindMapData = function() { return mindMapData; };
 
     })();
     </script>
