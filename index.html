@@ -282,6 +282,20 @@
         }
 
         /* ========================================
+           Map ID Badge
+           ======================================== */
+        .map-id-badge {
+            position: fixed;
+            top: 8px;
+            right: 12px;
+            font-size: 12px;
+            color: #999;
+            z-index: 500;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* ========================================
            Preview Modal
            ======================================== */
         .preview-overlay {
@@ -419,6 +433,9 @@
     </style>
 </head>
 <body>
+
+    <!-- Map ID Badge -->
+    <div class="map-id-badge" id="mapIdBadge"></div>
 
     <!-- Canvas Container (Full Screen) -->
     <div class="canvas-container" id="canvasContainer">
@@ -563,7 +580,13 @@
         // History Management (Undo/Redo)
         // ========================================
 
-        const STORAGE_KEY = 'mindmap_data_v2';
+        // ---- Map ID from URL parameter ----
+        function getMapId() {
+            var params = new URLSearchParams(window.location.search);
+            return params.get('id') || 'default';
+        }
+        const MAP_ID = getMapId();
+        const STORAGE_KEY = 'mindmap_data_v2_' + MAP_ID;
 
         function saveState() {
             undoHistory = undoHistory.slice(0, undoIndex + 1);
@@ -589,6 +612,21 @@
                     var parsed = JSON.parse(data);
                     if (parsed && parsed.root && parsed.root.id === 'root') {
                         return parsed;
+                    }
+                }
+                // Migration: if accessing as 'default' and no data under new key,
+                // try the legacy key (mindmap_data_v2) and migrate it
+                if (MAP_ID === 'default') {
+                    var legacyKey = 'mindmap_data_v2';
+                    var legacyData = localStorage.getItem(legacyKey);
+                    if (legacyData) {
+                        var legacyParsed = JSON.parse(legacyData);
+                        if (legacyParsed && legacyParsed.root && legacyParsed.root.id === 'root') {
+                            // Migrate: save under new key and remove legacy key
+                            localStorage.setItem(STORAGE_KEY, legacyData);
+                            localStorage.removeItem(legacyKey);
+                            return legacyParsed;
+                        }
                     }
                 }
             } catch(e) { /* invalid data */ }
@@ -2004,6 +2042,10 @@
         // ========================================
 
         function init() {
+            // Show map ID badge (hide if default)
+            if (MAP_ID !== 'default') {
+                document.getElementById('mapIdBadge').textContent = '\uD83D\uDCCC ' + MAP_ID;
+            }
             // Restore from localStorage if available
             var saved = loadFromLocalStorage();
             if (saved) {
