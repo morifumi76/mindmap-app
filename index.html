@@ -187,19 +187,41 @@
         }
 
         /* ========================================
-           Left Sidebar (My Maps)
+           Left Sidebar (My Maps) – Notion style
            ======================================== */
         .left-sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100%;
-            background: #ffffff;
-            border-right: 1px solid #e0e0e0;
+            background: #f7f7f5;
             z-index: 600;
             display: flex;
             flex-direction: row;
-            box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .left-sidebar.collapsed {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .left-sidebar.collapsed.peek {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+            box-shadow: 4px 0 16px rgba(0,0,0,0.1);
+        }
+
+        /* Invisible hover zone on the left edge to trigger peek */
+        .left-sidebar-hover-zone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100%;
+            z-index: 599;
         }
 
         .left-sidebar-content {
@@ -212,7 +234,7 @@
         }
 
         .left-sidebar-resize-handle {
-            width: 6px;
+            width: 4px;
             cursor: col-resize;
             background: transparent;
             flex-shrink: 0;
@@ -224,107 +246,108 @@
 
         .left-sidebar-resize-handle:hover,
         .left-sidebar-resize-handle.dragging {
-            background: var(--primary-color);
+            background: rgba(0,0,0,0.08);
         }
 
         .left-sidebar-toggle-btn {
-            position: absolute;
-            right: -14px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 14px;
-            height: 48px;
-            background: #e8e8e8;
-            border: 1px solid #d0d0d0;
-            border-left: none;
-            border-radius: 0 6px 6px 0;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            color: #666;
-            z-index: 11;
-            transition: background 0.15s;
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            color: #91918e;
+            flex-shrink: 0;
+            transition: background 0.12s;
         }
 
         .left-sidebar-toggle-btn:hover {
-            background: #ddd;
+            background: rgba(0,0,0,0.06);
         }
 
         .left-sidebar-header {
-            padding: 12px 14px 8px;
-            font-size: 14px;
-            font-weight: bold;
-            color: var(--text-color);
-            border-bottom: 1px solid #e8e8e8;
-            background: #f8f9fa;
+            padding: 12px 8px 0 12px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: space-between;
             flex-shrink: 0;
+        }
+
+        .left-sidebar-header-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #91918e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .left-sidebar-new-btn {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 4px;
-            width: 100%;
-            padding: 8px 12px;
-            margin: 8px 10px;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
+            width: calc(100% - 16px);
+            padding: 4px 8px;
+            margin: 8px 8px 4px;
+            border: none;
+            border-radius: 4px;
             background: transparent;
             font-family: var(--font-family);
             font-size: 13px;
-            color: #888;
+            color: #91918e;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: background 0.12s;
             flex-shrink: 0;
         }
 
         .left-sidebar-new-btn:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            background: #f0f7ff;
+            background: rgba(0,0,0,0.03);
+            color: #37352f;
         }
 
         .left-sidebar-list {
             flex: 1;
             overflow-y: auto;
-            padding: 4px 0;
+            padding: 2px 0;
+            margin-top: 4px;
         }
 
         .map-item {
             display: flex;
             align-items: center;
-            padding: 8px 10px 8px 14px;
+            height: 28px;
+            padding: 0 8px 0 12px;
+            margin: 1px 4px;
             cursor: pointer;
-            transition: background 0.12s;
+            transition: background 0.08s;
             gap: 6px;
             position: relative;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #37352f;
         }
 
         .map-item:hover {
-            background: #f0f4f8;
+            background: rgba(0,0,0,0.03);
         }
 
         .map-item.active {
-            background: var(--node-selected);
-            border-left: 3px solid var(--primary-color);
-            padding-left: 11px;
+            background: rgba(0,0,0,0.06);
         }
 
         .map-item-icon {
             flex-shrink: 0;
-            font-size: 14px;
+            font-size: 13px;
+            line-height: 1;
         }
 
         .map-item-name {
             flex: 1;
             font-size: 13px;
-            color: var(--text-color);
+            color: #37352f;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -343,19 +366,19 @@
 
         .map-item-menu-btn {
             flex-shrink: 0;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border: none;
             border-radius: 4px;
             background: transparent;
-            color: #999;
-            font-size: 16px;
+            color: #91918e;
+            font-size: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity 0.12s, background 0.12s;
+            transition: opacity 0.08s, background 0.08s;
         }
 
         .map-item:hover .map-item-menu-btn,
@@ -364,20 +387,44 @@
         }
 
         .map-item-menu-btn:hover {
-            background: #e0e0e0;
+            background: rgba(0,0,0,0.06);
         }
 
-        .left-sidebar.collapsed .left-sidebar-content {
+        /* Floating toggle when sidebar is collapsed – hidden by default, shown via JS */
+        .left-sidebar-float-toggle {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.04);
+            cursor: pointer;
             display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #91918e;
+            z-index: 601;
+            transition: background 0.12s, opacity 0.2s;
         }
 
-        /* Context menu */
+        .left-sidebar-float-toggle:hover {
+            background: rgba(0,0,0,0.08);
+        }
+
+        .left-sidebar-float-toggle.show {
+            display: flex;
+        }
+
+        /* Context menu – Notion style */
         .ctx-menu {
             position: fixed;
             background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 6px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
             z-index: 5000;
             min-width: 160px;
             padding: 4px 0;
@@ -392,17 +439,18 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
+            padding: 4px 12px;
+            height: 28px;
             font-size: 13px;
             font-family: var(--font-family);
-            color: var(--text-color);
+            color: #37352f;
             cursor: pointer;
-            transition: background 0.1s;
+            transition: background 0.08s;
             white-space: nowrap;
         }
 
         .ctx-menu-item:hover {
-            background: #f0f4f8;
+            background: rgba(0,0,0,0.03);
         }
 
         .ctx-menu-item.danger {
@@ -410,52 +458,38 @@
         }
 
         .ctx-menu-item.danger:hover {
-            background: #ffeaea;
+            background: rgba(229,57,53,0.04);
         }
 
         /* ========================================
-           Right Sidebar
+           Right Sidebar – Notion style
            ======================================== */
         .sidebar {
             position: fixed;
             top: 0;
             right: 0;
             height: 100%;
-            background: #ffffff;
-            border-left: 1px solid #e0e0e0;
+            background: #f7f7f5;
+            border-left: 1px solid rgba(0,0,0,0.06);
             z-index: 600;
             display: flex;
             flex-direction: row;
-            box-shadow: -2px 0 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, opacity 0.2s ease;
         }
 
+        .sidebar.collapsed {
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Old toggle btn is hidden; replaced by floating 🌲 button */
         .sidebar-toggle-btn {
-            position: absolute;
-            left: -14px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 14px;
-            height: 48px;
-            background: #e8e8e8;
-            border: 1px solid #d0d0d0;
-            border-right: none;
-            border-radius: 6px 0 0 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            color: #666;
-            z-index: 11;
-            transition: background 0.15s;
-        }
-
-        .sidebar-toggle-btn:hover {
-            background: #ddd;
+            display: none;
         }
 
         .sidebar-resize-handle {
-            width: 6px;
+            width: 4px;
             cursor: col-resize;
             background: transparent;
             flex-shrink: 0;
@@ -466,7 +500,7 @@
 
         .sidebar-resize-handle:hover,
         .sidebar-resize-handle.dragging {
-            background: var(--primary-color);
+            background: rgba(0,0,0,0.08);
         }
 
         .sidebar-content {
@@ -477,76 +511,151 @@
             min-width: 0;
         }
 
-        .sidebar-controls {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e8e8e8;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            background: #f8f9fa;
+        /* Hidden – backward compat selects */
+        .sidebar-controls select {
+            display: none;
+        }
+
+        /* ---- Bottom panel (toggles + buttons) ---- */
+        .sidebar-bottom-panel {
             flex-shrink: 0;
         }
 
-        .sidebar-controls-row {
+        .sidebar-bottom-separator {
+            border-top: 1px solid #e8e8e8;
+            margin: 0 12px;
+        }
+
+        .sidebar-toggle-area {
+            padding: 12px 16px 8px 16px;
             display: flex;
-            gap: 6px;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .sidebar-controls select {
+        .sidebar-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-toggle-label {
+            font-size: 13px;
+            color: #37352f;
             font-family: var(--font-family);
-            font-size: 12px;
-            padding: 5px 6px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: #fff;
-            color: var(--text-color);
+            user-select: none;
+        }
+
+        /* iOS-style capsule toggle */
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            flex-shrink: 0;
             cursor: pointer;
-            outline: none;
-            flex: 1;
-            min-width: 0;
         }
 
-        .sidebar-controls select:focus {
-            border-color: var(--primary-color);
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
         }
 
-        .sidebar-btn {
+        .toggle-slider {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #d4d4d4;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 2px;
+            top: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: #37352f;
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        .sidebar-button-area {
+            padding: 0 16px 12px 16px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .sidebar-btn-copy {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 4px;
-            padding: 6px 10px;
+            width: 100px;
+            min-width: 100px;
+            max-width: 100px;
+            height: 32px;
             border: none;
             border-radius: 6px;
+            background: #37352f;
+            color: #ffffff;
             font-family: var(--font-family);
-            font-size: 12px;
-            font-weight: bold;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            flex-grow: 0;
+            flex-shrink: 0;
+            transition: opacity 0.12s;
             white-space: nowrap;
-            flex: 1;
-        }
-
-        .sidebar-btn:active {
-            transform: scale(0.97);
-        }
-
-        .sidebar-btn-copy {
-            background: var(--primary-color);
-            color: white;
         }
 
         .sidebar-btn-copy:hover {
-            background: var(--primary-hover);
+            opacity: 0.85;
+        }
+
+        .sidebar-btn-copy:active {
+            transform: scale(0.97);
         }
 
         .sidebar-btn-reset {
-            background: #e53935;
-            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            min-width: 80px;
+            max-width: 80px;
+            height: 32px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: transparent;
+            color: #91918e;
+            font-family: var(--font-family);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            flex-grow: 0;
+            flex-shrink: 0;
+            transition: background 0.12s;
+            white-space: nowrap;
         }
 
         .sidebar-btn-reset:hover {
-            background: #c62828;
+            background: #f7f7f5;
+        }
+
+        .sidebar-btn-reset:active {
+            transform: scale(0.97);
         }
 
         .sidebar-tree {
@@ -560,55 +669,102 @@
             position: relative;
             font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
             font-size: 13px;
-            line-height: 1.0;
-            padding: 6px 8px;
+            line-height: 1.3;
+            padding: 0;
+            margin: 0;
             white-space: pre;
             min-width: max-content;
         }
 
         .sidebar-preview-line {
-            display: inline;
+            display: block;
+            min-height: 24px;
+            line-height: 1.3;
+            padding: 2px 8px;
+            margin: 0;
+            font-size: 13px;
             cursor: pointer;
-            border-radius: 2px;
+            border-radius: 4px;
+            transition: background 0.08s;
         }
 
         .sidebar-preview-line:hover {
-            background: #eef3fb;
+            background: #f7f7f5;
         }
 
         .sidebar-preview-line.active {
-            background: var(--node-selected);
+            background: rgba(0,0,0,0.06);
             font-weight: bold;
         }
 
-        /* Mini copy button shown when sidebar is collapsed */
+        /* Hidden – no longer used */
         .sidebar-mini-btn {
-            display: none;
-            width: 32px;
-            height: 32px;
+            display: none !important;
+        }
+
+        /* Floating 🌲 toggle button (top-right, fixed size) */
+        .sidebar-float-toggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
             border: none;
-            border-radius: 6px;
-            background: var(--primary-color);
-            color: white;
-            font-size: 16px;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
             cursor: pointer;
+            display: flex;
             align-items: center;
             justify-content: center;
-            margin: 8px auto;
-            transition: background 0.2s;
+            font-size: 18px;
+            z-index: 601;
+            transition: background 0.12s;
+        }
+
+        .sidebar-float-toggle:hover {
+            background: #f0f0ee;
+        }
+
+        .sidebar-float-toggle.hidden {
+            display: none;
+        }
+
+        /* Close button inside right sidebar header */
+        .sidebar-close-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            color: #91918e;
+            flex-shrink: 0;
+            transition: background 0.12s;
+            margin-left: auto;
+        }
+
+        .sidebar-close-btn:hover {
+            background: rgba(0,0,0,0.06);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 8px 0 12px;
             flex-shrink: 0;
         }
 
-        .sidebar-mini-btn:hover {
-            background: var(--primary-hover);
-        }
-
-        .sidebar.collapsed .sidebar-content {
-            display: none;
-        }
-
-        .sidebar.collapsed .sidebar-mini-btn {
-            display: flex;
+        .sidebar-header-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #91918e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* ========================================
@@ -638,11 +794,19 @@
 </head>
 <body>
 
+    <!-- Left Sidebar Hover Zone (for peek when collapsed) -->
+    <div class="left-sidebar-hover-zone" id="leftSidebarHoverZone"></div>
+
+    <!-- Floating toggle to re-open left sidebar when collapsed -->
+    <button class="left-sidebar-float-toggle" id="leftSidebarFloatToggle" title="マイマップを開く">☰</button>
+
     <!-- Left Sidebar (My Maps) -->
     <div class="left-sidebar" id="leftSidebar">
-        <div class="left-sidebar-toggle-btn" id="leftSidebarToggle" title="マイマップ開閉">▶</div>
         <div class="left-sidebar-content" id="leftSidebarContent">
-            <div class="left-sidebar-header">📂 マイマップ</div>
+            <div class="left-sidebar-header">
+                <span class="left-sidebar-header-label">📂 マイマップ</span>
+                <div class="left-sidebar-toggle-btn" id="leftSidebarToggle" title="サイドバーを閉じる">«</div>
+            </div>
             <button class="left-sidebar-new-btn" id="newMapBtn">＋ 新規作成</button>
             <div class="left-sidebar-list" id="mapList"></div>
         </div>
@@ -665,30 +829,53 @@
         </div>
     </div>
 
+    <!-- Floating 🌲 toggle for right sidebar (always visible unless sidebar is open) -->
+    <button class="sidebar-float-toggle" id="sidebarFloatToggle" title="ツリーナビを開く">🌲</button>
+
     <!-- Right Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-toggle-btn" id="sidebarToggle" title="サイドバー開閉">◀</div>
         <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
         <button class="sidebar-mini-btn" id="sidebarMiniCopy" title="コピー">📋</button>
         <div class="sidebar-content" id="sidebarContent">
-            <div class="sidebar-controls">
-                <div class="sidebar-controls-row">
-                    <select id="copyFormat" title="出力形式">
-                        <option value="simple">シンプル</option>
-                        <option value="hiyoko">ひよこモード 🐥</option>
-                        <option value="family">かぞくモード 👶</option>
-                    </select>
-                    <select id="copyBorder" title="罫線">
-                        <option value="none">罫線なし</option>
-                        <option value="border" selected>罫線あり</option>
-                    </select>
-                </div>
-                <div class="sidebar-controls-row">
-                    <button class="sidebar-btn sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">📋 コピー</button>
-                    <button class="sidebar-btn sidebar-btn-reset" id="resetBtn" title="マップをリセット">🗑 リセット</button>
-                </div>
+            <div class="sidebar-header">
+                <span class="sidebar-header-label">ツリーナビ</span>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn" title="閉じる">✕</button>
             </div>
             <div class="sidebar-tree" id="sidebarTree"></div>
+            <!-- Bottom panel: toggles + buttons -->
+            <div class="sidebar-bottom-panel">
+                <div class="sidebar-bottom-separator"></div>
+                <div class="sidebar-toggle-area">
+                    <div class="sidebar-toggle-row">
+                        <span class="sidebar-toggle-label">🐣 ひよこモード</span>
+                        <label class="toggle-switch" id="toggleHiyoko">
+                            <input type="checkbox" id="toggleHiyokoInput">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="sidebar-toggle-row">
+                        <span class="sidebar-toggle-label">罫線</span>
+                        <label class="toggle-switch" id="toggleBorder">
+                            <input type="checkbox" id="toggleBorderInput" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="sidebar-button-area">
+                    <button class="sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">📋 コピー</button>
+                    <button class="sidebar-btn-reset" id="resetBtn" title="マップをリセット">リセット</button>
+                </div>
+            </div>
+            <!-- Hidden selects for backward compatibility -->
+            <select id="copyFormat" style="display:none">
+                <option value="simple">シンプル</option>
+                <option value="hiyoko">ひよこモード</option>
+            </select>
+            <select id="copyBorder" style="display:none">
+                <option value="none">罫線なし</option>
+                <option value="border" selected>罫線あり</option>
+            </select>
         </div>
     </div>
 
@@ -707,8 +894,8 @@
         // ========================================
 
         const levelIcons = {
-            hiyoko: { 1: '🐔', 2: '🐤', 3: '🐣', 4: '🥚' },
-            family: { 1: '👴', 2: '👨', 3: '👦', 4: '👶' }
+            hiyoko: { 1: '🐔', 2: '🐤', 3: '🐣', 4: '🥚' }
+            // family mode removed
         };
 
         let mindMapData = {
@@ -2419,6 +2606,23 @@
         }
 
         // ========================================
+        // Toggle Button Sync
+        // ========================================
+
+        function syncToggleButtons() {
+            var formatEl = document.getElementById('copyFormat');
+            var borderEl = document.getElementById('copyBorder');
+            var hiyokoInput = document.getElementById('toggleHiyokoInput');
+            var borderInput = document.getElementById('toggleBorderInput');
+            if (hiyokoInput) {
+                hiyokoInput.checked = (formatEl.value === 'hiyoko');
+            }
+            if (borderInput) {
+                borderInput.checked = (borderEl.value === 'border');
+            }
+        }
+
+        // ========================================
         // Initialization
         // ========================================
 
@@ -2469,17 +2673,42 @@
                 copyToClipboard();
             });
 
-            // Persist format/border selection
+            // Persist format/border selection – now driven by toggle buttons
             var savedFormat = localStorage.getItem('mindmap_copyFormat');
             var savedBorder = localStorage.getItem('mindmap_copyBorder');
+            // family mode has been removed – fall back to simple
+            if (savedFormat === 'family') savedFormat = 'simple';
+            // Apply saved state to hidden selects
             if (savedFormat) document.getElementById('copyFormat').value = savedFormat;
             document.getElementById('copyBorder').value = savedBorder || 'border';
+            // Sync toggle button UI with saved state
+            syncToggleButtons();
+
+            // Toggle switch: ひよこ ON/OFF
+            document.getElementById('toggleHiyokoInput').addEventListener('change', function() {
+                var formatEl = document.getElementById('copyFormat');
+                formatEl.value = this.checked ? 'hiyoko' : 'simple';
+                try { localStorage.setItem('mindmap_copyFormat', formatEl.value); } catch(e) {}
+                renderSidebarTree();
+            });
+
+            // Toggle switch: 罫線 ON/OFF
+            document.getElementById('toggleBorderInput').addEventListener('change', function() {
+                var borderEl = document.getElementById('copyBorder');
+                borderEl.value = this.checked ? 'border' : 'none';
+                try { localStorage.setItem('mindmap_copyBorder', borderEl.value); } catch(e) {}
+                renderSidebarTree();
+            });
+
+            // Keep hidden selects in sync (for backward compat / API)
             document.getElementById('copyFormat').addEventListener('change', function() {
                 try { localStorage.setItem('mindmap_copyFormat', this.value); } catch(e) {}
+                syncToggleButtons();
                 renderSidebarTree();
             });
             document.getElementById('copyBorder').addEventListener('change', function() {
                 try { localStorage.setItem('mindmap_copyBorder', this.value); } catch(e) {}
+                syncToggleButtons();
                 renderSidebarTree();
             });
 
@@ -2522,30 +2751,40 @@
         // Right Sidebar: Resize, Tree Rendering, Focus
         // ========================================
 
-        var SIDEBAR_MIN = 36;
         var SIDEBAR_OPEN_MIN = 200;
         var SIDEBAR_DEFAULT = 260;
         var SIDEBAR_KEY = 'mindmap_sidebar_width';
+        var sidebarIsOpen = false;
 
         function initSidebar() {
             var sidebar = document.getElementById('sidebar');
             var handle = document.getElementById('sidebarResizeHandle');
-            var savedW = parseInt(localStorage.getItem(SIDEBAR_KEY), 10);
-            var initialW = (savedW && savedW >= SIDEBAR_MIN) ? savedW : SIDEBAR_MIN;
-            applySidebarWidth(initialW);
+            var floatToggle = document.getElementById('sidebarFloatToggle');
+            var closeBtn = document.getElementById('sidebarCloseBtn');
 
-            var toggleBtn = document.getElementById('sidebarToggle');
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', function(e) {
+            // Start collapsed
+            sidebar.classList.add('collapsed');
+            sidebar.style.width = SIDEBAR_DEFAULT + 'px';
+            sidebarIsOpen = false;
+            updateSidebarFloatToggle();
+
+            // Floating 🌲 button opens the sidebar
+            if (floatToggle) {
+                floatToggle.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    var currentW = parseInt(sidebar.style.width, 10) || SIDEBAR_MIN;
-                    var newW = (currentW <= SIDEBAR_MIN) ? SIDEBAR_DEFAULT : SIDEBAR_MIN;
-                    applySidebarWidth(newW);
-                    try { localStorage.setItem(SIDEBAR_KEY, newW); } catch(ex) {}
-                    renderSidebarTree();
+                    openRightSidebar();
                 });
             }
 
+            // Close button inside sidebar header
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeRightSidebar();
+                });
+            }
+
+            // Resize handle
             var dragging = false;
             handle.addEventListener('mousedown', function(e) {
                 e.preventDefault();
@@ -2557,14 +2796,13 @@
             document.addEventListener('mousemove', function(e) {
                 if (!dragging) return;
                 var w = window.innerWidth - e.clientX;
-                if (w < (SIDEBAR_MIN + SIDEBAR_OPEN_MIN) / 2) {
-                    w = SIDEBAR_MIN;
-                } else if (w < SIDEBAR_OPEN_MIN) {
+                if (w < SIDEBAR_OPEN_MIN) {
                     w = SIDEBAR_OPEN_MIN;
                 } else if (w > window.innerWidth * 0.6) {
                     w = Math.floor(window.innerWidth * 0.6);
                 }
-                applySidebarWidth(w);
+                sidebar.style.width = w + 'px';
+                adjustCanvasForSidebars();
             });
             document.addEventListener('mouseup', function() {
                 if (!dragging) return;
@@ -2572,24 +2810,40 @@
                 handle.classList.remove('dragging');
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
-                var currentW = parseInt(sidebar.style.width, 10) || SIDEBAR_MIN;
+                var currentW = parseInt(sidebar.style.width, 10) || SIDEBAR_DEFAULT;
                 try { localStorage.setItem(SIDEBAR_KEY, currentW); } catch(e) {}
                 renderSidebarTree();
             });
         }
 
-        function applySidebarWidth(w) {
+        function openRightSidebar() {
             var sidebar = document.getElementById('sidebar');
+            var savedW = parseInt(localStorage.getItem(SIDEBAR_KEY), 10);
+            var w = (savedW && savedW >= SIDEBAR_OPEN_MIN) ? savedW : SIDEBAR_DEFAULT;
             sidebar.style.width = w + 'px';
-            var toggle = document.getElementById('sidebarToggle');
-            if (w <= SIDEBAR_MIN) {
-                sidebar.classList.add('collapsed');
-                if (toggle) toggle.textContent = '◀';
-            } else {
-                sidebar.classList.remove('collapsed');
-                if (toggle) toggle.textContent = '▶';
-            }
+            sidebar.classList.remove('collapsed');
+            sidebarIsOpen = true;
+            updateSidebarFloatToggle();
             adjustCanvasForSidebars();
+            renderSidebarTree();
+        }
+
+        function closeRightSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            sidebar.classList.add('collapsed');
+            sidebarIsOpen = false;
+            updateSidebarFloatToggle();
+            adjustCanvasForSidebars();
+        }
+
+        function updateSidebarFloatToggle() {
+            var floatToggle = document.getElementById('sidebarFloatToggle');
+            if (!floatToggle) return;
+            if (sidebarIsOpen) {
+                floatToggle.classList.add('hidden');
+            } else {
+                floatToggle.classList.remove('hidden');
+            }
         }
 
         function adjustCanvasForSidebars() {
@@ -2597,8 +2851,12 @@
             var leftSidebar = document.getElementById('leftSidebar');
             var container = document.getElementById('canvasContainer');
             if (container) {
-                container.style.right = rightSidebar ? rightSidebar.offsetWidth + 'px' : '0';
-                container.style.left = leftSidebar ? leftSidebar.offsetWidth + 'px' : '0';
+                // Right sidebar: only counts when open (not collapsed)
+                var rightW = (rightSidebar && !rightSidebar.classList.contains('collapsed')) ? rightSidebar.offsetWidth : 0;
+                // Left sidebar: only counts when open (not collapsed)
+                var leftW = (leftSidebar && !leftSidebar.classList.contains('collapsed')) ? leftSidebar.offsetWidth : 0;
+                container.style.right = rightW + 'px';
+                container.style.left = leftW + 'px';
             }
         }
 
@@ -2629,7 +2887,6 @@
                 var cls = 'sidebar-preview-line' + (isSelected ? ' active' : '');
                 var escaped = line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 html += '<span class="' + cls + '" data-sid="' + line.nodeId + '">' + escaped + '</span>';
-                if (i < displayLines.length - 1) html += '\n';
             }
             html += '</pre>';
             tree.innerHTML = html;
@@ -2720,29 +2977,76 @@
         // Left Sidebar: My Maps Management
         // ========================================
 
-        var LEFT_SIDEBAR_MIN = 36;
         var LEFT_SIDEBAR_OPEN_MIN = 200;
         var LEFT_SIDEBAR_DEFAULT = 240;
         var LEFT_SIDEBAR_KEY = 'mindmap_left_sidebar_width';
+        var leftSidebarIsOpen = false;
+        var leftSidebarPeekTimeout = null;
 
         function initLeftSidebar() {
             var sidebar = document.getElementById('leftSidebar');
             var handle = document.getElementById('leftSidebarResizeHandle');
-            var savedW = parseInt(localStorage.getItem(LEFT_SIDEBAR_KEY), 10);
-            var initialW = (savedW && savedW >= LEFT_SIDEBAR_MIN) ? savedW : LEFT_SIDEBAR_MIN;
-            applyLeftSidebarWidth(initialW);
+            var hoverZone = document.getElementById('leftSidebarHoverZone');
+            var floatToggle = document.getElementById('leftSidebarFloatToggle');
 
+            // Determine initial state: open by default (240px), or use saved width
+            var savedW = parseInt(localStorage.getItem(LEFT_SIDEBAR_KEY), 10);
+            if (savedW && savedW >= LEFT_SIDEBAR_OPEN_MIN) {
+                openLeftSidebar(savedW);
+            } else if (savedW === 0) {
+                // Explicitly closed before
+                closeLeftSidebar();
+            } else {
+                // First time: open at default width and save
+                openLeftSidebar(LEFT_SIDEBAR_DEFAULT);
+                try { localStorage.setItem(LEFT_SIDEBAR_KEY, LEFT_SIDEBAR_DEFAULT); } catch(ex) {}
+            }
+
+            // Toggle button «/» inside the header closes sidebar
             var toggleBtn = document.getElementById('leftSidebarToggle');
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    var currentW = parseInt(sidebar.style.width, 10) || LEFT_SIDEBAR_MIN;
-                    var newW = (currentW <= LEFT_SIDEBAR_MIN) ? LEFT_SIDEBAR_DEFAULT : LEFT_SIDEBAR_MIN;
-                    applyLeftSidebarWidth(newW);
-                    try { localStorage.setItem(LEFT_SIDEBAR_KEY, newW); } catch(ex) {}
+                    if (leftSidebarIsOpen) {
+                        closeLeftSidebar();
+                        try { localStorage.setItem(LEFT_SIDEBAR_KEY, '0'); } catch(ex) {}
+                    } else {
+                        openLeftSidebar(LEFT_SIDEBAR_DEFAULT);
+                        try { localStorage.setItem(LEFT_SIDEBAR_KEY, LEFT_SIDEBAR_DEFAULT); } catch(ex) {}
+                    }
                     renderMapList();
                 });
             }
+
+            // Floating ☰ button re-opens the sidebar
+            if (floatToggle) {
+                floatToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openLeftSidebar(LEFT_SIDEBAR_DEFAULT);
+                    try { localStorage.setItem(LEFT_SIDEBAR_KEY, LEFT_SIDEBAR_DEFAULT); } catch(ex) {}
+                    renderMapList();
+                });
+            }
+
+            // Hover zone: when sidebar is collapsed, hovering near left edge peeks it in
+            if (hoverZone) {
+                hoverZone.addEventListener('mouseenter', function() {
+                    if (leftSidebarIsOpen) return;
+                    leftSidebarPeekTimeout = setTimeout(function() {
+                        sidebar.classList.add('peek');
+                    }, 200);
+                });
+                hoverZone.addEventListener('mouseleave', function() {
+                    clearTimeout(leftSidebarPeekTimeout);
+                });
+            }
+
+            // Remove peek when mouse leaves the sidebar area
+            sidebar.addEventListener('mouseleave', function() {
+                if (!leftSidebarIsOpen) {
+                    sidebar.classList.remove('peek');
+                }
+            });
 
             // New map button
             document.getElementById('newMapBtn').addEventListener('click', function(e) {
@@ -2780,14 +3084,13 @@
             document.addEventListener('mousemove', function(e) {
                 if (!dragging) return;
                 var w = e.clientX;
-                if (w < (LEFT_SIDEBAR_MIN + LEFT_SIDEBAR_OPEN_MIN) / 2) {
-                    w = LEFT_SIDEBAR_MIN;
-                } else if (w < LEFT_SIDEBAR_OPEN_MIN) {
+                if (w < LEFT_SIDEBAR_OPEN_MIN) {
                     w = LEFT_SIDEBAR_OPEN_MIN;
                 } else if (w > window.innerWidth * 0.4) {
                     w = Math.floor(window.innerWidth * 0.4);
                 }
-                applyLeftSidebarWidth(w);
+                sidebar.style.width = w + 'px';
+                adjustCanvasForSidebars();
             });
             document.addEventListener('mouseup', function() {
                 if (!dragging) return;
@@ -2795,22 +3098,33 @@
                 handle.classList.remove('dragging');
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
-                var currentW = parseInt(sidebar.style.width, 10) || LEFT_SIDEBAR_MIN;
+                var currentW = parseInt(sidebar.style.width, 10) || LEFT_SIDEBAR_DEFAULT;
                 try { localStorage.setItem(LEFT_SIDEBAR_KEY, currentW); } catch(e) {}
             });
         }
 
-        function applyLeftSidebarWidth(w) {
+        function openLeftSidebar(width) {
             var sidebar = document.getElementById('leftSidebar');
+            var floatToggle = document.getElementById('leftSidebarFloatToggle');
+            var toggleBtn = document.getElementById('leftSidebarToggle');
+            var w = width || LEFT_SIDEBAR_DEFAULT;
             sidebar.style.width = w + 'px';
-            var toggle = document.getElementById('leftSidebarToggle');
-            if (w <= LEFT_SIDEBAR_MIN) {
-                sidebar.classList.add('collapsed');
-                if (toggle) toggle.textContent = '▶';
-            } else {
-                sidebar.classList.remove('collapsed');
-                if (toggle) toggle.textContent = '◀';
-            }
+            sidebar.classList.remove('collapsed', 'peek');
+            leftSidebarIsOpen = true;
+            if (floatToggle) floatToggle.classList.remove('show');
+            if (toggleBtn) toggleBtn.textContent = '«';
+            adjustCanvasForSidebars();
+        }
+
+        function closeLeftSidebar() {
+            var sidebar = document.getElementById('leftSidebar');
+            var floatToggle = document.getElementById('leftSidebarFloatToggle');
+            var toggleBtn = document.getElementById('leftSidebarToggle');
+            sidebar.classList.add('collapsed');
+            sidebar.classList.remove('peek');
+            leftSidebarIsOpen = false;
+            if (floatToggle) floatToggle.classList.add('show');
+            if (toggleBtn) toggleBtn.textContent = '»';
             adjustCanvasForSidebars();
         }
 
@@ -3053,6 +3367,10 @@
         window.getMetaList = getMetaList;
         window.switchToMap = switchToMap;
         window.createNewMap = createNewMap;
+        window.openRightSidebar = openRightSidebar;
+        window.closeRightSidebar = closeRightSidebar;
+        window.openLeftSidebar = openLeftSidebar;
+        window.closeLeftSidebar = closeLeftSidebar;
 
     })();
     </script>

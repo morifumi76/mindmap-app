@@ -18,14 +18,10 @@ function assert(cond, msg) {
     await page.goto('http://localhost:8080/index.html');
     await page.waitForTimeout(1500);
 
-    // Open left sidebar
-    await page.click('#leftSidebarToggle');
-    await page.waitForTimeout(300);
-
-    // Should have the left sidebar visible
+    // Left sidebar should be open by default (240px on fresh start)
     let leftSidebar = page.locator('#leftSidebar');
     let isCollapsed = await leftSidebar.evaluate(el => el.classList.contains('collapsed'));
-    assert(!isCollapsed, 'Left sidebar opens on toggle click');
+    assert(!isCollapsed, 'Left sidebar opens by default on fresh start');
 
     // Should have header
     let header = await page.locator('.left-sidebar-header').textContent();
@@ -263,9 +259,13 @@ function assert(cond, msg) {
     await page.reload();
     await page.waitForTimeout(1500);
     
-    // Open left sidebar
-    await page.click('#leftSidebarToggle');
-    await page.waitForTimeout(300);
+    // Left sidebar should still be open after reload (default)
+    let lsCollapsedAfterReload = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
+    if (lsCollapsedAfterReload) {
+        // Use floating toggle to reopen
+        await page.click('#leftSidebarFloatToggle');
+        await page.waitForTimeout(300);
+    }
 
     let reloadedId = await page.evaluate(() => window.getCurrentMapId());
     assert(reloadedId === savedCurrentId, 'Same map loaded after reload (last active)');
@@ -275,10 +275,10 @@ function assert(cond, msg) {
     // ========================================
     console.log('\n=== Test 10: URL ?id= Parameter ===');
     
-    // Open left sidebar first
+    // Open left sidebar if collapsed
     let lsCollapsed10 = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
     if (lsCollapsed10) {
-        await page.click('#leftSidebarToggle');
+        await page.click('#leftSidebarFloatToggle');
         await page.waitForTimeout(300);
     }
     
@@ -299,9 +299,12 @@ function assert(cond, msg) {
     // ========================================
     console.log('\n=== Test 11: Sort Order ===');
     
-    // Open left sidebar
-    await page.click('#leftSidebarToggle');
-    await page.waitForTimeout(300);
+    // Open left sidebar if collapsed
+    let lsCollapsed11 = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
+    if (lsCollapsed11) {
+        await page.click('#leftSidebarFloatToggle');
+        await page.waitForTimeout(300);
+    }
     
     meta = await page.evaluate(() => {
         try { return JSON.parse(localStorage.getItem('mindmap-meta')); } catch(e) { return null; }
@@ -375,8 +378,9 @@ function assert(cond, msg) {
     // ========================================
     console.log('\n=== Test 14: Right Sidebar ===');
     
-    let rightToggle = page.locator('#sidebarToggle');
-    await rightToggle.click();
+    // Open right sidebar via floating 🐣 button
+    let rightFloatToggle = page.locator('#sidebarFloatToggle');
+    await rightFloatToggle.click();
     await page.waitForTimeout(300);
     
     let rightSidebar = page.locator('#sidebar');
@@ -418,7 +422,7 @@ function assert(cond, msg) {
     // First open left sidebar if it closed
     let leftCollapsed = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
     if (leftCollapsed) {
-        await page.click('#leftSidebarToggle');
+        await page.click('#leftSidebarFloatToggle');
         await page.waitForTimeout(300);
     }
     
