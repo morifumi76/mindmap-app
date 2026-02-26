@@ -17,10 +17,12 @@ const { chromium } = require('playwright');
         else { failed++; console.log('  ❌ FAIL: ' + msg); }
     }
 
-    // Build test tree via evaluate
+    // Build test tree via evaluate using the new multi-map storage
     console.log('\n=== Building test tree ===');
     await page.evaluate(() => {
-        const d = window.getMindMapData();
+        // Get the current map ID
+        var mapId = window.getCurrentMapId();
+        var d = window.getMindMapData();
         d.root.text = '中心テーマ';
         d.root.children = [
             { id: 'pa', text: 'ParentA', children: [
@@ -31,7 +33,8 @@ const { chromium } = require('playwright');
                 { id: 'cb1', text: 'ChildB1', children: [] }
             ]}
         ];
-        localStorage.setItem('mindmap_data_v2', JSON.stringify(d));
+        // Save using the new multi-map storage format
+        localStorage.setItem('mindmap-data-' + mapId, JSON.stringify(d));
     });
     await page.reload();
     await page.waitForSelector('.node', { state: 'attached', timeout: 10000 });

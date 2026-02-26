@@ -50,7 +50,7 @@
             background-image:
                 radial-gradient(circle, #ddd 1px, transparent 1px);
             background-size: 20px 20px;
-            transition: right 0.15s ease;
+            transition: left 0.15s ease, right 0.15s ease;
         }
 
         .canvas {
@@ -184,6 +184,233 @@
             pointer-events: none;
             z-index: 900;
             display: none;
+        }
+
+        /* ========================================
+           Left Sidebar (My Maps)
+           ======================================== */
+        .left-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            z-index: 600;
+            display: flex;
+            flex-direction: row;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+        }
+
+        .left-sidebar-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+            order: 1;
+        }
+
+        .left-sidebar-resize-handle {
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+            transition: background 0.15s;
+            order: 2;
+        }
+
+        .left-sidebar-resize-handle:hover,
+        .left-sidebar-resize-handle.dragging {
+            background: var(--primary-color);
+        }
+
+        .left-sidebar-toggle-btn {
+            position: absolute;
+            right: -14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 48px;
+            background: #e8e8e8;
+            border: 1px solid #d0d0d0;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #666;
+            z-index: 11;
+            transition: background 0.15s;
+        }
+
+        .left-sidebar-toggle-btn:hover {
+            background: #ddd;
+        }
+
+        .left-sidebar-header {
+            padding: 12px 14px 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-color);
+            border-bottom: 1px solid #e8e8e8;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .left-sidebar-new-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+            padding: 8px 12px;
+            margin: 8px 10px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            background: transparent;
+            font-family: var(--font-family);
+            font-size: 13px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .left-sidebar-new-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: #f0f7ff;
+        }
+
+        .left-sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .map-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px 8px 14px;
+            cursor: pointer;
+            transition: background 0.12s;
+            gap: 6px;
+            position: relative;
+        }
+
+        .map-item:hover {
+            background: #f0f4f8;
+        }
+
+        .map-item.active {
+            background: var(--node-selected);
+            border-left: 3px solid var(--primary-color);
+            padding-left: 11px;
+        }
+
+        .map-item-icon {
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .map-item-name {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .map-item-name[contenteditable="true"] {
+            background: #fff;
+            border: 1px solid var(--primary-color);
+            border-radius: 3px;
+            padding: 1px 4px;
+            outline: none;
+            white-space: nowrap;
+            overflow: visible;
+        }
+
+        .map-item-menu-btn {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: #999;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.12s, background 0.12s;
+        }
+
+        .map-item:hover .map-item-menu-btn,
+        .map-item-menu-btn.open {
+            opacity: 1;
+        }
+
+        .map-item-menu-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .left-sidebar.collapsed .left-sidebar-content {
+            display: none;
+        }
+
+        /* Context menu */
+        .ctx-menu {
+            position: fixed;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            z-index: 5000;
+            min-width: 160px;
+            padding: 4px 0;
+            display: none;
+        }
+
+        .ctx-menu.show {
+            display: block;
+        }
+
+        .ctx-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-family: var(--font-family);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: background 0.1s;
+            white-space: nowrap;
+        }
+
+        .ctx-menu-item:hover {
+            background: #f0f4f8;
+        }
+
+        .ctx-menu-item.danger {
+            color: #e53935;
+        }
+
+        .ctx-menu-item.danger:hover {
+            background: #ffeaea;
         }
 
         /* ========================================
@@ -411,6 +638,24 @@
 </head>
 <body>
 
+    <!-- Left Sidebar (My Maps) -->
+    <div class="left-sidebar" id="leftSidebar">
+        <div class="left-sidebar-toggle-btn" id="leftSidebarToggle" title="マイマップ開閉">▶</div>
+        <div class="left-sidebar-content" id="leftSidebarContent">
+            <div class="left-sidebar-header">📂 マイマップ</div>
+            <button class="left-sidebar-new-btn" id="newMapBtn">＋ 新規作成</button>
+            <div class="left-sidebar-list" id="mapList"></div>
+        </div>
+        <div class="left-sidebar-resize-handle" id="leftSidebarResizeHandle"></div>
+    </div>
+
+    <!-- Context Menu for Map Items -->
+    <div class="ctx-menu" id="ctxMenu">
+        <div class="ctx-menu-item" data-action="rename">✏️ 名前変更</div>
+        <div class="ctx-menu-item" data-action="duplicate">📑 複製</div>
+        <div class="ctx-menu-item danger" data-action="delete">🗑 削除</div>
+    </div>
+
     <!-- Canvas Container (Full Screen) -->
     <div class="canvas-container" id="canvasContainer">
         <div class="canvas" id="canvas">
@@ -474,6 +719,8 @@
             }
         };
 
+        let currentMapId = null; // Currently active map ID
+
         let selectedNodeIds = new Set();
         let lastSelectedNodeId = null;
         let selectionAnchorId = null; // Anchor node for Shift+Arrow range selection
@@ -500,7 +747,7 @@
         // Drag reparenting state
         let nodeDragState = {
             isDragging: false,
-            didDrag: false,     // true if actual drag occurred (to suppress click)
+            didDrag: false,
             nodeId: null,
             draggedNodeIds: null,
             targetNodeId: null,
@@ -510,12 +757,15 @@
         // Lasso selection state
         let lassoState = {
             active: false,
-            didSelect: false,   // true if lasso selected nodes (to suppress click clear)
+            didSelect: false,
             startX: 0,
             startY: 0,
             currentX: 0,
             currentY: 0
         };
+
+        // Context menu state
+        let ctxMenuTargetMapId = null;
 
         // ========================================
         // Utility Functions
@@ -541,10 +791,128 @@
         }
 
         // ========================================
-        // History Management (Undo/Redo)
+        // Multi-Map Storage Layer
         // ========================================
 
-        const STORAGE_KEY = 'mindmap_data_v2';
+        var META_KEY = 'mindmap-meta';
+        var ID_COUNTER_KEY = 'mindmap-id-counter';
+        var LAST_ACTIVE_KEY = 'mindmap-last-active-id';
+        var OLD_STORAGE_KEY = 'mindmap_data_v2'; // legacy key for migration
+
+        function getMapDataKey(mapId) {
+            return 'mindmap-data-' + mapId;
+        }
+
+        function getMetaList() {
+            try {
+                var raw = localStorage.getItem(META_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return [];
+        }
+
+        function saveMetaList(metaList) {
+            try { localStorage.setItem(META_KEY, JSON.stringify(metaList)); } catch(e) {}
+        }
+
+        function getNextMapId() {
+            var counter = parseInt(localStorage.getItem(ID_COUNTER_KEY), 10) || 0;
+            counter++;
+            try { localStorage.setItem(ID_COUNTER_KEY, String(counter)); } catch(e) {}
+            return counter;
+        }
+
+        function setLastActiveId(mapId) {
+            try { localStorage.setItem(LAST_ACTIVE_KEY, String(mapId)); } catch(e) {}
+        }
+
+        function getLastActiveId() {
+            return parseInt(localStorage.getItem(LAST_ACTIVE_KEY), 10) || null;
+        }
+
+        function findMetaById(mapId) {
+            var list = getMetaList();
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].id === mapId) return list[i];
+            }
+            return null;
+        }
+
+        function nowISO() {
+            return new Date().toISOString();
+        }
+
+        // ---- Migration from old single-map storage ----
+        function migrateIfNeeded() {
+            // If meta already exists, skip migration
+            if (localStorage.getItem(META_KEY)) return;
+
+            var oldData = null;
+            try {
+                var raw = localStorage.getItem(OLD_STORAGE_KEY);
+                if (raw) {
+                    var parsed = JSON.parse(raw);
+                    if (parsed && parsed.root && parsed.root.id === 'root') {
+                        oldData = parsed;
+                    }
+                }
+            } catch(e) {}
+
+            var now = nowISO();
+            if (oldData) {
+                // Migrate existing data as map ID 1
+                var mapId = getNextMapId();
+                var mapName = oldData.root.text || '無題のマップ';
+                var meta = { id: mapId, name: mapName, createdAt: now, updatedAt: now };
+                saveMetaList([meta]);
+                try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(oldData)); } catch(e) {}
+                setLastActiveId(mapId);
+                // Remove old key
+                try { localStorage.removeItem(OLD_STORAGE_KEY); } catch(e) {}
+            } else {
+                // No existing data: create initial empty map
+                var mapId = getNextMapId();
+                var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+                var meta = { id: mapId, name: '無題のマップ', createdAt: now, updatedAt: now };
+                saveMetaList([meta]);
+                try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(defaultData)); } catch(e) {}
+                setLastActiveId(mapId);
+            }
+        }
+
+        // ---- Save / Load for current map ----
+        function saveToLocalStorage() {
+            if (!currentMapId) return;
+            try {
+                localStorage.setItem(getMapDataKey(currentMapId), JSON.stringify(mindMapData));
+            } catch(e) {}
+            // Update meta updatedAt
+            var metaList = getMetaList();
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].id === currentMapId) {
+                    metaList[i].updatedAt = nowISO();
+                    break;
+                }
+            }
+            saveMetaList(metaList);
+        }
+
+        function loadMapData(mapId) {
+            try {
+                var raw = localStorage.getItem(getMapDataKey(mapId));
+                if (raw) {
+                    var parsed = JSON.parse(raw);
+                    if (parsed && parsed.root && parsed.root.id === 'root') {
+                        return parsed;
+                    }
+                }
+            } catch(e) {}
+            return null;
+        }
+
+        // ========================================
+        // History Management (Undo/Redo)
+        // ========================================
 
         function saveState() {
             undoHistory = undoHistory.slice(0, undoIndex + 1);
@@ -554,26 +922,6 @@
             } else {
                 undoIndex++;
             }
-            // Note: localStorage save is handled in render() to capture post-mutation state
-        }
-
-        function saveToLocalStorage() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(mindMapData));
-            } catch(e) { /* quota exceeded or private mode */ }
-        }
-
-        function loadFromLocalStorage() {
-            try {
-                var data = localStorage.getItem(STORAGE_KEY);
-                if (data) {
-                    var parsed = JSON.parse(data);
-                    if (parsed && parsed.root && parsed.root.id === 'root') {
-                        return parsed;
-                    }
-                }
-            } catch(e) { /* invalid data */ }
-            return null;
         }
 
         function resetMindMap() {
@@ -588,7 +936,6 @@
             editingNodeId = null;
             clipboard = null;
             clipboardIsCut = false;
-            try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
             saveState();
             render();
             resetView();
@@ -2076,11 +2423,42 @@
         // ========================================
 
         function init() {
-            // Restore from localStorage if available
-            var saved = loadFromLocalStorage();
+            // Run migration from old storage format
+            migrateIfNeeded();
+
+            // Determine which map to load
+            var urlParams = new URLSearchParams(window.location.search);
+            var requestedId = urlParams.get('id') ? parseInt(urlParams.get('id'), 10) : null;
+            var lastId = getLastActiveId();
+            var metaList = getMetaList();
+
+            if (requestedId && findMetaById(requestedId)) {
+                currentMapId = requestedId;
+            } else if (lastId && findMetaById(lastId)) {
+                currentMapId = lastId;
+            } else if (metaList.length > 0) {
+                // Sort by updatedAt desc, pick first
+                metaList.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+                currentMapId = metaList[0].id;
+            } else {
+                // No maps exist at all, create one
+                var newId = getNextMapId();
+                var now = nowISO();
+                var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+                saveMetaList([{ id: newId, name: '無題のマップ', createdAt: now, updatedAt: now }]);
+                try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
+                currentMapId = newId;
+            }
+
+            // Load map data
+            var saved = loadMapData(currentMapId);
             if (saved) {
                 mindMapData = saved;
             }
+            setLastActiveId(currentMapId);
+            updateUrlParam(currentMapId);
+            updatePageTitle();
+
             saveState();
             document.addEventListener('keydown', handleKeyDown);
             initCanvasInteraction();
@@ -2095,7 +2473,6 @@
             var savedFormat = localStorage.getItem('mindmap_copyFormat');
             var savedBorder = localStorage.getItem('mindmap_copyBorder');
             if (savedFormat) document.getElementById('copyFormat').value = savedFormat;
-            // Default border to 'border' (罫線あり) if nothing saved
             document.getElementById('copyBorder').value = savedBorder || 'border';
             document.getElementById('copyFormat').addEventListener('change', function() {
                 try { localStorage.setItem('mindmap_copyFormat', this.value); } catch(e) {}
@@ -2106,25 +2483,47 @@
                 renderSidebarTree();
             });
 
-            // Sidebar resize & toggle
+            // Right sidebar resize & toggle
             initSidebar();
-            // Adjust canvas for sidebar
-            adjustCanvasForSidebar();
+            // Left sidebar
+            initLeftSidebar();
+            // Adjust canvas for both sidebars
+            adjustCanvasForSidebars();
             resetView();
             render();
+            renderMapList();
             selectNode('root');
-            // Start editing root on first load
             setTimeout(function() { startEditing('root'); }, 100);
+
+            // Close context menu on any click outside
+            document.addEventListener('click', function(e) {
+                var cm = document.getElementById('ctxMenu');
+                if (cm && !cm.contains(e.target)) {
+                    cm.classList.remove('show');
+                    ctxMenuTargetMapId = null;
+                }
+            });
+        }
+
+        function updateUrlParam(mapId) {
+            var url = new URL(window.location);
+            url.searchParams.set('id', mapId);
+            history.replaceState(null, '', url);
+        }
+
+        function updatePageTitle() {
+            var meta = findMetaById(currentMapId);
+            document.title = meta ? meta.name + ' - マインドマップ' : 'マインドマップ';
         }
 
         document.addEventListener('DOMContentLoaded', init);
 
         // ========================================
-        // Sidebar: Resize, Tree Rendering, Focus
+        // Right Sidebar: Resize, Tree Rendering, Focus
         // ========================================
 
-        var SIDEBAR_MIN = 36;       // collapsed = just resize handle + mini button
-        var SIDEBAR_OPEN_MIN = 200; // minimum when open
+        var SIDEBAR_MIN = 36;
+        var SIDEBAR_OPEN_MIN = 200;
         var SIDEBAR_DEFAULT = 260;
         var SIDEBAR_KEY = 'mindmap_sidebar_width';
 
@@ -2135,7 +2534,6 @@
             var initialW = (savedW && savedW >= SIDEBAR_MIN) ? savedW : SIDEBAR_MIN;
             applySidebarWidth(initialW);
 
-            // Toggle button to open/close sidebar
             var toggleBtn = document.getElementById('sidebarToggle');
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function(e) {
@@ -2160,7 +2558,7 @@
                 if (!dragging) return;
                 var w = window.innerWidth - e.clientX;
                 if (w < (SIDEBAR_MIN + SIDEBAR_OPEN_MIN) / 2) {
-                    w = SIDEBAR_MIN; // snap closed
+                    w = SIDEBAR_MIN;
                 } else if (w < SIDEBAR_OPEN_MIN) {
                     w = SIDEBAR_OPEN_MIN;
                 } else if (w > window.innerWidth * 0.6) {
@@ -2191,14 +2589,16 @@
                 sidebar.classList.remove('collapsed');
                 if (toggle) toggle.textContent = '▶';
             }
-            adjustCanvasForSidebar();
+            adjustCanvasForSidebars();
         }
 
-        function adjustCanvasForSidebar() {
-            var sidebar = document.getElementById('sidebar');
+        function adjustCanvasForSidebars() {
+            var rightSidebar = document.getElementById('sidebar');
+            var leftSidebar = document.getElementById('leftSidebar');
             var container = document.getElementById('canvasContainer');
-            if (sidebar && container) {
-                container.style.right = sidebar.offsetWidth + 'px';
+            if (container) {
+                container.style.right = rightSidebar ? rightSidebar.offsetWidth + 'px' : '0';
+                container.style.left = leftSidebar ? leftSidebar.offsetWidth + 'px' : '0';
             }
         }
 
@@ -2211,14 +2611,12 @@
                 return;
             }
 
-            // Build formatted preview lines with node-id mapping
             var format = document.getElementById('copyFormat').value;
             var border = document.getElementById('copyBorder').value;
             var useBorder = (border === 'border');
-            var lines = []; // { text, nodeId }
+            var lines = [];
             generatePreviewLines(mindMapData.root, 0, [], format, useBorder, lines);
 
-            // Filter out separator lines for preview (they are only needed for copy output)
             var displayLines = [];
             for (var i = 0; i < lines.length; i++) {
                 if (!lines[i].isSep) displayLines.push(lines[i]);
@@ -2236,7 +2634,6 @@
             html += '</pre>';
             tree.innerHTML = html;
 
-            // Attach click handlers
             tree.querySelectorAll('.sidebar-preview-line').forEach(function(el) {
                 el.addEventListener('click', function() {
                     var nid = el.getAttribute('data-sid');
@@ -2244,14 +2641,12 @@
                 });
             });
 
-            // Auto-scroll active item into view within sidebar
             var activeEl = tree.querySelector('.sidebar-preview-line.active');
             if (activeEl) {
                 activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             }
         }
 
-        // Generate preview lines with node-id mapping (similar to generateCopyText but returns structured array)
         function generatePreviewLines(node, level, parentContinues, format, useBorder, lines) {
             var iconLevel = Math.min(level + 1, 4);
             var icons = levelIcons[format];
@@ -2278,7 +2673,6 @@
                 }
                 lineText = prefix + connector + icon + node.text;
             }
-            // Replace newlines in node text with space for single-line display
             lineText = lineText.replace(/\n/g, ' ');
             lines.push({ text: lineText, nodeId: node.id });
 
@@ -2289,7 +2683,6 @@
                 generatePreviewLines(node.children[i], level + 1, newContinues, format, useBorder, lines);
             }
 
-            // Separator blank line between sibling groups (border mode only)
             if (useBorder && level > 0 && node.children.length > 0) {
                 var amILast = (parentContinues[level - 1] === false);
                 if (!amILast) {
@@ -2305,7 +2698,6 @@
 
         function focusNodeFromSidebar(nodeId) {
             selectNode(nodeId);
-            // Center the node on screen
             var nodeEl = document.querySelector('[data-id="' + nodeId + '"]');
             if (!nodeEl) return;
             var container = document.getElementById('canvasContainer');
@@ -2324,10 +2716,343 @@
             renderSidebarTree();
         }
 
+        // ========================================
+        // Left Sidebar: My Maps Management
+        // ========================================
+
+        var LEFT_SIDEBAR_MIN = 36;
+        var LEFT_SIDEBAR_OPEN_MIN = 200;
+        var LEFT_SIDEBAR_DEFAULT = 240;
+        var LEFT_SIDEBAR_KEY = 'mindmap_left_sidebar_width';
+
+        function initLeftSidebar() {
+            var sidebar = document.getElementById('leftSidebar');
+            var handle = document.getElementById('leftSidebarResizeHandle');
+            var savedW = parseInt(localStorage.getItem(LEFT_SIDEBAR_KEY), 10);
+            var initialW = (savedW && savedW >= LEFT_SIDEBAR_MIN) ? savedW : LEFT_SIDEBAR_MIN;
+            applyLeftSidebarWidth(initialW);
+
+            var toggleBtn = document.getElementById('leftSidebarToggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var currentW = parseInt(sidebar.style.width, 10) || LEFT_SIDEBAR_MIN;
+                    var newW = (currentW <= LEFT_SIDEBAR_MIN) ? LEFT_SIDEBAR_DEFAULT : LEFT_SIDEBAR_MIN;
+                    applyLeftSidebarWidth(newW);
+                    try { localStorage.setItem(LEFT_SIDEBAR_KEY, newW); } catch(ex) {}
+                    renderMapList();
+                });
+            }
+
+            // New map button
+            document.getElementById('newMapBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                createNewMap();
+            });
+
+            // Context menu actions
+            document.getElementById('ctxMenu').addEventListener('click', function(e) {
+                var action = e.target.getAttribute('data-action');
+                if (!action || !ctxMenuTargetMapId) return;
+                var cm = document.getElementById('ctxMenu');
+                cm.classList.remove('show');
+                var targetId = ctxMenuTargetMapId;
+                ctxMenuTargetMapId = null;
+
+                if (action === 'rename') {
+                    startInlineRename(targetId);
+                } else if (action === 'duplicate') {
+                    duplicateMap(targetId);
+                } else if (action === 'delete') {
+                    deleteMap(targetId);
+                }
+            });
+
+            // Resize handle
+            var dragging = false;
+            handle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                dragging = true;
+                handle.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!dragging) return;
+                var w = e.clientX;
+                if (w < (LEFT_SIDEBAR_MIN + LEFT_SIDEBAR_OPEN_MIN) / 2) {
+                    w = LEFT_SIDEBAR_MIN;
+                } else if (w < LEFT_SIDEBAR_OPEN_MIN) {
+                    w = LEFT_SIDEBAR_OPEN_MIN;
+                } else if (w > window.innerWidth * 0.4) {
+                    w = Math.floor(window.innerWidth * 0.4);
+                }
+                applyLeftSidebarWidth(w);
+            });
+            document.addEventListener('mouseup', function() {
+                if (!dragging) return;
+                dragging = false;
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                var currentW = parseInt(sidebar.style.width, 10) || LEFT_SIDEBAR_MIN;
+                try { localStorage.setItem(LEFT_SIDEBAR_KEY, currentW); } catch(e) {}
+            });
+        }
+
+        function applyLeftSidebarWidth(w) {
+            var sidebar = document.getElementById('leftSidebar');
+            sidebar.style.width = w + 'px';
+            var toggle = document.getElementById('leftSidebarToggle');
+            if (w <= LEFT_SIDEBAR_MIN) {
+                sidebar.classList.add('collapsed');
+                if (toggle) toggle.textContent = '▶';
+            } else {
+                sidebar.classList.remove('collapsed');
+                if (toggle) toggle.textContent = '◀';
+            }
+            adjustCanvasForSidebars();
+        }
+
+        // ---- Render Map List ----
+        function renderMapList() {
+            var list = document.getElementById('mapList');
+            if (!list) return;
+            var metaList = getMetaList();
+            // Sort by updatedAt desc
+            metaList.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+
+            list.innerHTML = '';
+            for (var i = 0; i < metaList.length; i++) {
+                var meta = metaList[i];
+                var isActive = (meta.id === currentMapId);
+                var item = document.createElement('div');
+                item.className = 'map-item' + (isActive ? ' active' : '');
+                item.dataset.mapId = meta.id;
+
+                var icon = document.createElement('span');
+                icon.className = 'map-item-icon';
+                icon.textContent = isActive ? '📌' : '📄';
+
+                var name = document.createElement('span');
+                name.className = 'map-item-name';
+                name.textContent = meta.name;
+                name.title = meta.name;
+
+                var menuBtn = document.createElement('button');
+                menuBtn.className = 'map-item-menu-btn';
+                menuBtn.textContent = '⋯';
+                menuBtn.title = 'メニュー';
+
+                item.appendChild(icon);
+                item.appendChild(name);
+                item.appendChild(menuBtn);
+
+                // Click on item -> switch map
+                (function(mapId) {
+                    item.addEventListener('click', function(e) {
+                        if (e.target === menuBtn || e.target.classList.contains('map-item-menu-btn')) return;
+                        if (e.target.contentEditable === 'true') return;
+                        switchToMap(mapId);
+                    });
+                    menuBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        showContextMenu(mapId, menuBtn);
+                    });
+                })(meta.id);
+
+                list.appendChild(item);
+            }
+        }
+
+        // ---- Context Menu ----
+        function showContextMenu(mapId, anchorEl) {
+            ctxMenuTargetMapId = mapId;
+            var cm = document.getElementById('ctxMenu');
+            var rect = anchorEl.getBoundingClientRect();
+            cm.style.top = rect.bottom + 4 + 'px';
+            cm.style.left = rect.left + 'px';
+            // Ensure it doesn't go off-screen
+            cm.classList.add('show');
+            var cmRect = cm.getBoundingClientRect();
+            if (cmRect.right > window.innerWidth) {
+                cm.style.left = (window.innerWidth - cmRect.width - 8) + 'px';
+            }
+            if (cmRect.bottom > window.innerHeight) {
+                cm.style.top = (rect.top - cmRect.height - 4) + 'px';
+            }
+            // Mark the menu button as open
+            document.querySelectorAll('.map-item-menu-btn.open').forEach(function(el) { el.classList.remove('open'); });
+            anchorEl.classList.add('open');
+        }
+
+        // ---- Map CRUD ----
+        function createNewMap() {
+            // Save current map first
+            saveToLocalStorage();
+
+            var newId = getNextMapId();
+            var now = nowISO();
+            var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+            var meta = { id: newId, name: '無題のマップ', createdAt: now, updatedAt: now };
+
+            var metaList = getMetaList();
+            metaList.push(meta);
+            saveMetaList(metaList);
+            try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
+
+            switchToMap(newId);
+            showToast('📄 新しいマップを作成しました');
+        }
+
+        function switchToMap(mapId) {
+            if (mapId === currentMapId) return;
+
+            // Save current map
+            saveToLocalStorage();
+
+            // Load new map
+            var data = loadMapData(mapId);
+            if (!data) {
+                showToast('マップデータが見つかりません');
+                return;
+            }
+
+            // Reset state
+            finishEditing();
+            selectedNodeIds.clear();
+            lastSelectedNodeId = null;
+            selectionAnchorId = null;
+            editingNodeId = null;
+            undoHistory = [];
+            undoIndex = -1;
+            clipboard = null;
+            clipboardIsCut = false;
+
+            currentMapId = mapId;
+            mindMapData = data;
+            setLastActiveId(mapId);
+            updateUrlParam(mapId);
+            updatePageTitle();
+
+            saveState();
+            render();
+            resetView();
+            renderMapList();
+            selectNode('root');
+        }
+
+        function duplicateMap(mapId) {
+            var srcMeta = findMetaById(mapId);
+            if (!srcMeta) return;
+
+            var srcData = loadMapData(mapId);
+            if (!srcData) return;
+
+            var newId = getNextMapId();
+            var now = nowISO();
+            var newMeta = {
+                id: newId,
+                name: srcMeta.name + ' のコピー',
+                createdAt: now,
+                updatedAt: now
+            };
+
+            var metaList = getMetaList();
+            metaList.push(newMeta);
+            saveMetaList(metaList);
+            try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(deepClone(srcData))); } catch(e) {}
+
+            renderMapList();
+            showToast('📑 マップを複製しました');
+        }
+
+        function deleteMap(mapId) {
+            var metaList = getMetaList();
+            if (metaList.length <= 1) {
+                showToast('⚠️ 最後のマップは削除できません');
+                return;
+            }
+            if (!confirm('このマップを削除しますか？')) return;
+
+            // Remove from meta
+            var newMeta = [];
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].id !== mapId) newMeta.push(metaList[i]);
+            }
+            saveMetaList(newMeta);
+            try { localStorage.removeItem(getMapDataKey(mapId)); } catch(e) {}
+
+            if (mapId === currentMapId) {
+                // Switch to first available
+                newMeta.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+                switchToMap(newMeta[0].id);
+            } else {
+                renderMapList();
+            }
+            showToast('🗑 マップを削除しました');
+        }
+
+        function startInlineRename(mapId) {
+            var item = document.querySelector('.map-item[data-map-id="' + mapId + '"]');
+            if (!item) return;
+            var nameEl = item.querySelector('.map-item-name');
+            if (!nameEl) return;
+
+            nameEl.contentEditable = 'true';
+            nameEl.focus();
+            // Select all text
+            var range = document.createRange();
+            range.selectNodeContents(nameEl);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            function finish() {
+                nameEl.contentEditable = 'false';
+                var newName = nameEl.textContent.trim() || '無題のマップ';
+                nameEl.textContent = newName;
+
+                var metaList = getMetaList();
+                for (var i = 0; i < metaList.length; i++) {
+                    if (metaList[i].id === mapId) {
+                        metaList[i].name = newName;
+                        metaList[i].updatedAt = nowISO();
+                        break;
+                    }
+                }
+                saveMetaList(metaList);
+                if (mapId === currentMapId) updatePageTitle();
+                renderMapList();
+                nameEl.removeEventListener('blur', finish);
+                nameEl.removeEventListener('keydown', onKey);
+            }
+
+            function onKey(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finish();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    nameEl.contentEditable = 'false';
+                    renderMapList(); // revert
+                    nameEl.removeEventListener('blur', finish);
+                    nameEl.removeEventListener('keydown', onKey);
+                }
+            }
+
+            nameEl.addEventListener('blur', finish);
+            nameEl.addEventListener('keydown', onKey);
+        }
+
         // Expose for testing/integration
         window.getCurrentCopyText = getCurrentCopyText;
         window.getSelectedNodeIds = function() { return selectedNodeIds; };
         window.getMindMapData = function() { return mindMapData; };
+        window.getCurrentMapId = function() { return currentMapId; };
+        window.getMetaList = getMetaList;
+        window.switchToMap = switchToMap;
+        window.createNewMap = createNewMap;
 
     })();
     </script>
