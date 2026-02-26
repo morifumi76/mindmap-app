@@ -50,6 +50,7 @@
             background-image:
                 radial-gradient(circle, #ddd 1px, transparent 1px);
             background-size: 20px 20px;
+            transition: right 0.15s ease;
         }
 
         .canvas {
@@ -186,211 +187,199 @@
         }
 
         /* ========================================
-           Copy Button (Floating, Bottom-Right)
+           Right Sidebar
            ======================================== */
-        .copy-panel {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 8px;
-            z-index: 500;
-            background: #ffffff;
-            padding: 12px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            border: 1px solid #e0e0e0;
-            min-width: 160px;
-        }
-
-        .copy-panel select {
-            font-family: var(--font-family);
-            font-size: 13px;
-            padding: 6px 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: #f9f9f9;
-            color: var(--text-color);
-            cursor: pointer;
-            outline: none;
-            transition: border-color 0.2s;
-            width: 100%;
-        }
-
-        .copy-panel select:focus {
-            border-color: var(--primary-color);
-        }
-
-        .copy-btn, .preview-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            background: var(--primary-color);
-            color: white;
-            font-family: var(--font-family);
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            white-space: nowrap;
-            width: 100%;
-        }
-
-        .preview-btn {
-            background: #6c757d;
-        }
-
-        .preview-btn:hover {
-            background: #5a6268;
-        }
-
-        .copy-btn:hover {
-            background: var(--primary-hover);
-        }
-
-        .copy-btn:active, .preview-btn:active, .reset-btn:active {
-            transform: scale(0.97);
-        }
-
-        .reset-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            background: #e53935;
-            color: white;
-            font-family: var(--font-family);
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            white-space: nowrap;
-            width: 100%;
-        }
-
-        .reset-btn:hover {
-            background: #c62828;
-        }
-
-        /* ========================================
-           Preview Modal
-           ======================================== */
-        .preview-overlay {
+        .sidebar {
             position: fixed;
             top: 0;
-            left: 0;
             right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            display: none;
+            height: 100%;
+            background: #ffffff;
+            border-left: 1px solid #e0e0e0;
+            z-index: 600;
+            display: flex;
+            flex-direction: row;
+            box-shadow: -2px 0 12px rgba(0,0,0,0.08);
+        }
+
+        .sidebar-toggle-btn {
+            position: absolute;
+            left: -14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 48px;
+            background: #e8e8e8;
+            border: 1px solid #d0d0d0;
+            border-right: none;
+            border-radius: 6px 0 0 6px;
+            cursor: pointer;
+            display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 10px;
+            color: #666;
+            z-index: 11;
+            transition: background 0.15s;
         }
 
-        .preview-overlay.show {
-            display: flex;
+        .sidebar-toggle-btn:hover {
+            background: #ddd;
         }
 
-        .preview-modal {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 90%;
-            max-width: 680px;
-            max-height: 80vh;
+        .sidebar-resize-handle {
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+            transition: background 0.15s;
+        }
+
+        .sidebar-resize-handle:hover,
+        .sidebar-resize-handle.dragging {
+            background: var(--primary-color);
+        }
+
+        .sidebar-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            min-width: 0;
         }
 
-        .preview-header {
+        .sidebar-controls {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e8e8e8;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid #e0e0e0;
+            flex-direction: column;
+            gap: 6px;
             background: #f8f9fa;
+            flex-shrink: 0;
         }
 
-        .preview-header h3 {
-            font-size: 15px;
-            color: var(--text-color);
+        .sidebar-controls-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .sidebar-controls select {
             font-family: var(--font-family);
+            font-size: 12px;
+            padding: 5px 6px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            color: var(--text-color);
+            cursor: pointer;
+            outline: none;
+            flex: 1;
+            min-width: 0;
         }
 
-        .preview-header-btns {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .sidebar-controls select:focus {
+            border-color: var(--primary-color);
         }
 
-        .preview-copy-btn {
+        .sidebar-btn {
             display: flex;
             align-items: center;
-            gap: 5px;
-            padding: 6px 14px;
+            justify-content: center;
+            gap: 4px;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            font-family: var(--font-family);
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .sidebar-btn:active {
+            transform: scale(0.97);
+        }
+
+        .sidebar-btn-copy {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar-btn-copy:hover {
+            background: var(--primary-hover);
+        }
+
+        .sidebar-btn-reset {
+            background: #e53935;
+            color: white;
+        }
+
+        .sidebar-btn-reset:hover {
+            background: #c62828;
+        }
+
+        .sidebar-tree {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 8px 0;
+        }
+
+        .sidebar-tree-node {
+            padding: 4px 12px 4px 0;
+            font-size: 13px;
+            color: var(--text-color);
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-radius: 4px;
+            margin: 0 4px;
+            transition: background 0.12s;
+            user-select: none;
+        }
+
+        .sidebar-tree-node:hover {
+            background: #eef3fb;
+        }
+
+        .sidebar-tree-node.active {
+            background: var(--node-selected);
+            font-weight: bold;
+        }
+
+        /* Mini copy button shown when sidebar is collapsed */
+        .sidebar-mini-btn {
+            display: none;
+            width: 32px;
+            height: 32px;
             border: none;
             border-radius: 6px;
             background: var(--primary-color);
             color: white;
-            font-family: var(--font-family);
-            font-size: 13px;
-            font-weight: bold;
+            font-size: 16px;
             cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            margin: 8px auto;
             transition: background 0.2s;
+            flex-shrink: 0;
         }
 
-        .preview-copy-btn:hover {
+        .sidebar-mini-btn:hover {
             background: var(--primary-hover);
         }
 
-        .preview-close-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 50%;
-            background: transparent;
-            color: #666;
-            font-size: 20px;
-            cursor: pointer;
+        .sidebar.collapsed .sidebar-content {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-mini-btn {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .preview-close-btn:hover {
-            background: #e0e0e0;
-        }
-
-        .preview-body {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .preview-body pre {
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.7;
-            color: var(--text-color);
-            background: #f6f8fa;
-            border: 1px solid #e1e4e8;
-            border-radius: 8px;
-            padding: 16px 20px;
-            white-space: pre;
-            overflow-x: auto;
-            margin: 0;
         }
 
         /* ========================================
@@ -429,41 +418,30 @@
         </div>
     </div>
 
-    <!-- Copy Panel (Floating Bottom-Right) -->
-    <div class="copy-panel" id="copyPanel">
-        <select id="copyFormat" title="出力形式">
-            <option value="simple">シンプル</option>
-            <option value="hiyoko">ひよこモード 🐥</option>
-            <option value="family">かぞくモード 👶</option>
-        </select>
-        <select id="copyBorder" title="罫線">
-            <option value="none">罫線なし</option>
-            <option value="border" selected>罫線あり</option>
-        </select>
-        <button class="preview-btn" id="previewBtn" title="プレビュー">
-            👁 プレビュー
-        </button>
-        <button class="copy-btn" id="copyBtn" title="クリップボードにコピー">
-            📋 コピー
-        </button>
-        <button class="reset-btn" id="resetBtn" title="マップをリセット">
-            🗑 リセット
-        </button>
-    </div>
-
-    <!-- Preview Modal -->
-    <div class="preview-overlay" id="previewOverlay">
-        <div class="preview-modal">
-            <div class="preview-header">
-                <h3>📄 コピー内容プレビュー</h3>
-                <div class="preview-header-btns">
-                    <button class="preview-copy-btn" id="previewCopyBtn">📋 コピー</button>
-                    <button class="preview-close-btn" id="previewCloseBtn">&times;</button>
+    <!-- Right Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-toggle-btn" id="sidebarToggle" title="サイドバー開閉">◀</div>
+        <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
+        <button class="sidebar-mini-btn" id="sidebarMiniCopy" title="コピー">📋</button>
+        <div class="sidebar-content" id="sidebarContent">
+            <div class="sidebar-controls">
+                <div class="sidebar-controls-row">
+                    <select id="copyFormat" title="出力形式">
+                        <option value="simple">シンプル</option>
+                        <option value="hiyoko">ひよこモード 🐥</option>
+                        <option value="family">かぞくモード 👶</option>
+                    </select>
+                    <select id="copyBorder" title="罫線">
+                        <option value="none">罫線なし</option>
+                        <option value="border" selected>罫線あり</option>
+                    </select>
+                </div>
+                <div class="sidebar-controls-row">
+                    <button class="sidebar-btn sidebar-btn-copy" id="copyBtn" title="クリップボードにコピー">📋 コピー</button>
+                    <button class="sidebar-btn sidebar-btn-reset" id="resetBtn" title="マップをリセット">🗑 リセット</button>
                 </div>
             </div>
-            <div class="preview-body">
-                <pre id="previewContent"></pre>
-            </div>
+            <div class="sidebar-tree" id="sidebarTree"></div>
         </div>
     </div>
 
@@ -833,11 +811,18 @@
             document.querySelectorAll('.node.selected').forEach(function(el) {
                 el.classList.remove('selected');
             });
+            document.querySelectorAll('.sidebar-tree-node.active').forEach(function(el) {
+                el.classList.remove('active');
+            });
         }
 
         function updateSelectionDisplay() {
             document.querySelectorAll('.node').forEach(function(el) {
                 el.classList.toggle('selected', selectedNodeIds.has(el.dataset.id));
+            });
+            // Sync sidebar tree highlight
+            document.querySelectorAll('.sidebar-tree-node').forEach(function(el) {
+                el.classList.toggle('active', selectedNodeIds.has(el.getAttribute('data-sid')));
             });
         }
 
@@ -1276,15 +1261,7 @@
             showToast('✅ コピーしました');
         }
 
-        function showPreview() {
-            var text = getCurrentCopyText();
-            document.getElementById('previewContent').textContent = text;
-            document.getElementById('previewOverlay').classList.add('show');
-        }
 
-        function hidePreview() {
-            document.getElementById('previewOverlay').classList.remove('show');
-        }
 
         function generateCopyText(node, level, parentContinues, format, useBorder) {
             var result = '';
@@ -1598,6 +1575,8 @@
             updateView();
             // Auto-save to localStorage after every render (post-mutation state)
             saveToLocalStorage();
+            // Update sidebar tree in real-time
+            renderSidebarTree();
         }
 
         // Measure actual rendered width AND height of each node's text
@@ -2105,21 +2084,28 @@
             initCanvasInteraction();
             document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
             document.getElementById('resetBtn').addEventListener('click', resetMindMap);
-            document.getElementById('previewBtn').addEventListener('click', showPreview);
-            document.getElementById('previewCopyBtn').addEventListener('click', function() {
+            document.getElementById('sidebarMiniCopy').addEventListener('click', function(e) {
+                e.stopPropagation();
                 copyToClipboard();
             });
-            document.getElementById('previewCloseBtn').addEventListener('click', hidePreview);
-            document.getElementById('previewOverlay').addEventListener('click', function(e) {
-                if (e.target === this) hidePreview();
-            });
-            // Update preview in real-time when dropdowns change while preview is open
+
+            // Persist format/border selection
+            var savedFormat = localStorage.getItem('mindmap_copyFormat');
+            var savedBorder = localStorage.getItem('mindmap_copyBorder');
+            if (savedFormat) document.getElementById('copyFormat').value = savedFormat;
+            // Default border to 'border' (罫線あり) if nothing saved
+            document.getElementById('copyBorder').value = savedBorder || 'border';
             document.getElementById('copyFormat').addEventListener('change', function() {
-                if (document.getElementById('previewOverlay').classList.contains('show')) showPreview();
+                try { localStorage.setItem('mindmap_copyFormat', this.value); } catch(e) {}
             });
             document.getElementById('copyBorder').addEventListener('change', function() {
-                if (document.getElementById('previewOverlay').classList.contains('show')) showPreview();
+                try { localStorage.setItem('mindmap_copyBorder', this.value); } catch(e) {}
             });
+
+            // Sidebar resize & toggle
+            initSidebar();
+            // Adjust canvas for sidebar
+            adjustCanvasForSidebar();
             resetView();
             render();
             selectNode('root');
@@ -2128,6 +2114,147 @@
         }
 
         document.addEventListener('DOMContentLoaded', init);
+
+        // ========================================
+        // Sidebar: Resize, Tree Rendering, Focus
+        // ========================================
+
+        var SIDEBAR_MIN = 36;       // collapsed = just resize handle + mini button
+        var SIDEBAR_OPEN_MIN = 200; // minimum when open
+        var SIDEBAR_DEFAULT = 260;
+        var SIDEBAR_KEY = 'mindmap_sidebar_width';
+
+        function initSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var handle = document.getElementById('sidebarResizeHandle');
+            var savedW = parseInt(localStorage.getItem(SIDEBAR_KEY), 10);
+            var initialW = (savedW && savedW >= SIDEBAR_MIN) ? savedW : SIDEBAR_MIN;
+            applySidebarWidth(initialW);
+
+            // Toggle button to open/close sidebar
+            var toggleBtn = document.getElementById('sidebarToggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var currentW = parseInt(sidebar.style.width, 10) || SIDEBAR_MIN;
+                    var newW = (currentW <= SIDEBAR_MIN) ? SIDEBAR_DEFAULT : SIDEBAR_MIN;
+                    applySidebarWidth(newW);
+                    try { localStorage.setItem(SIDEBAR_KEY, newW); } catch(ex) {}
+                    renderSidebarTree();
+                });
+            }
+
+            var dragging = false;
+            handle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                dragging = true;
+                handle.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!dragging) return;
+                var w = window.innerWidth - e.clientX;
+                if (w < (SIDEBAR_MIN + SIDEBAR_OPEN_MIN) / 2) {
+                    w = SIDEBAR_MIN; // snap closed
+                } else if (w < SIDEBAR_OPEN_MIN) {
+                    w = SIDEBAR_OPEN_MIN;
+                } else if (w > window.innerWidth * 0.6) {
+                    w = Math.floor(window.innerWidth * 0.6);
+                }
+                applySidebarWidth(w);
+            });
+            document.addEventListener('mouseup', function() {
+                if (!dragging) return;
+                dragging = false;
+                handle.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                var currentW = parseInt(sidebar.style.width, 10) || SIDEBAR_MIN;
+                try { localStorage.setItem(SIDEBAR_KEY, currentW); } catch(e) {}
+                renderSidebarTree();
+            });
+        }
+
+        function applySidebarWidth(w) {
+            var sidebar = document.getElementById('sidebar');
+            sidebar.style.width = w + 'px';
+            var toggle = document.getElementById('sidebarToggle');
+            if (w <= SIDEBAR_MIN) {
+                sidebar.classList.add('collapsed');
+                if (toggle) toggle.textContent = '◀';
+            } else {
+                sidebar.classList.remove('collapsed');
+                if (toggle) toggle.textContent = '▶';
+            }
+            adjustCanvasForSidebar();
+        }
+
+        function adjustCanvasForSidebar() {
+            var sidebar = document.getElementById('sidebar');
+            var container = document.getElementById('canvasContainer');
+            if (sidebar && container) {
+                container.style.right = sidebar.offsetWidth + 'px';
+            }
+        }
+
+        function renderSidebarTree() {
+            var tree = document.getElementById('sidebarTree');
+            if (!tree) return;
+            var sidebar = document.getElementById('sidebar');
+            if (sidebar && sidebar.classList.contains('collapsed')) {
+                tree.innerHTML = '';
+                return;
+            }
+            var html = '';
+            function walk(node, depth) {
+                var pad = depth * 18;
+                var isSelected = selectedNodeIds.has(node.id);
+                var cls = 'sidebar-tree-node' + (isSelected ? ' active' : '');
+                var displayText = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
+                html += '<div class="' + cls + '" data-sid="' + node.id + '" style="padding-left:' + (pad + 10) + 'px">' + displayText + '</div>';
+                for (var i = 0; i < node.children.length; i++) {
+                    walk(node.children[i], depth + 1);
+                }
+            }
+            walk(mindMapData.root, 0);
+            tree.innerHTML = html;
+
+            // Attach click handlers
+            tree.querySelectorAll('.sidebar-tree-node').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var nid = el.getAttribute('data-sid');
+                    if (nid) focusNodeFromSidebar(nid);
+                });
+            });
+
+            // Auto-scroll active item into view within sidebar
+            var activeEl = tree.querySelector('.sidebar-tree-node.active');
+            if (activeEl) {
+                activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        function focusNodeFromSidebar(nodeId) {
+            selectNode(nodeId);
+            // Center the node on screen
+            var nodeEl = document.querySelector('[data-id="' + nodeId + '"]');
+            if (!nodeEl) return;
+            var container = document.getElementById('canvasContainer');
+            var sidebar = document.getElementById('sidebar');
+            var sidebarW = sidebar ? sidebar.offsetWidth : 0;
+            var rect = nodeEl.getBoundingClientRect();
+            var cRect = container.getBoundingClientRect();
+            var availableW = cRect.width - sidebarW;
+            var targetX = cRect.left + availableW / 2;
+            var targetY = cRect.top + cRect.height / 2;
+            var dx = targetX - (rect.left + rect.width / 2);
+            var dy = targetY - (rect.top + rect.height / 2);
+            viewState.panX += dx;
+            viewState.panY += dy;
+            updateView();
+            renderSidebarTree();
+        }
 
         // Expose for testing/integration
         window.getCurrentCopyText = getCurrentCopyText;
