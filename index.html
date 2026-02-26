@@ -325,29 +325,31 @@
         .sidebar-tree {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden;
+            overflow-x: auto;
             padding: 8px 0;
         }
 
-        .sidebar-tree-node {
-            padding: 4px 12px 4px 0;
+        .sidebar-preview {
+            position: relative;
+            font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
             font-size: 13px;
-            color: var(--text-color);
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            border-radius: 4px;
-            margin: 0 4px;
-            transition: background 0.12s;
-            user-select: none;
+            line-height: 1.0;
+            padding: 6px 8px;
+            white-space: pre;
+            min-width: max-content;
         }
 
-        .sidebar-tree-node:hover {
+        .sidebar-preview-line {
+            display: inline;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .sidebar-preview-line:hover {
             background: #eef3fb;
         }
 
-        .sidebar-tree-node.active {
+        .sidebar-preview-line.active {
             background: var(--node-selected);
             font-weight: bold;
         }
@@ -811,7 +813,7 @@
             document.querySelectorAll('.node.selected').forEach(function(el) {
                 el.classList.remove('selected');
             });
-            document.querySelectorAll('.sidebar-tree-node.active').forEach(function(el) {
+            document.querySelectorAll('.sidebar-preview-line.active').forEach(function(el) {
                 el.classList.remove('active');
             });
         }
@@ -820,8 +822,8 @@
             document.querySelectorAll('.node').forEach(function(el) {
                 el.classList.toggle('selected', selectedNodeIds.has(el.dataset.id));
             });
-            // Sync sidebar tree highlight
-            document.querySelectorAll('.sidebar-tree-node').forEach(function(el) {
+            // Sync sidebar preview highlight
+            document.querySelectorAll('.sidebar-preview-line').forEach(function(el) {
                 el.classList.toggle('active', selectedNodeIds.has(el.getAttribute('data-sid')));
             });
         }
@@ -2097,9 +2099,11 @@
             document.getElementById('copyBorder').value = savedBorder || 'border';
             document.getElementById('copyFormat').addEventListener('change', function() {
                 try { localStorage.setItem('mindmap_copyFormat', this.value); } catch(e) {}
+                renderSidebarTree();
             });
             document.getElementById('copyBorder').addEventListener('change', function() {
                 try { localStorage.setItem('mindmap_copyBorder', this.value); } catch(e) {}
+                renderSidebarTree();
             });
 
             // Sidebar resize & toggle
@@ -2206,22 +2210,34 @@
                 tree.innerHTML = '';
                 return;
             }
-            var html = '';
-            function walk(node, depth) {
-                var pad = depth * 18;
-                var isSelected = selectedNodeIds.has(node.id);
-                var cls = 'sidebar-tree-node' + (isSelected ? ' active' : '');
-                var displayText = node.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
-                html += '<div class="' + cls + '" data-sid="' + node.id + '" style="padding-left:' + (pad + 10) + 'px">' + displayText + '</div>';
-                for (var i = 0; i < node.children.length; i++) {
-                    walk(node.children[i], depth + 1);
-                }
+
+            // Build formatted preview lines with node-id mapping
+            var format = document.getElementById('copyFormat').value;
+            var border = document.getElementById('copyBorder').value;
+            var useBorder = (border === 'border');
+            var lines = []; // { text, nodeId }
+            generatePreviewLines(mindMapData.root, 0, [], format, useBorder, lines);
+
+            // Filter out separator lines for preview (they are only needed for copy output)
+            var displayLines = [];
+            for (var i = 0; i < lines.length; i++) {
+                if (!lines[i].isSep) displayLines.push(lines[i]);
             }
-            walk(mindMapData.root, 0);
+
+            var html = '<pre class="sidebar-preview">';
+            for (var i = 0; i < displayLines.length; i++) {
+                var line = displayLines[i];
+                var isSelected = selectedNodeIds.has(line.nodeId);
+                var cls = 'sidebar-preview-line' + (isSelected ? ' active' : '');
+                var escaped = line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                html += '<span class="' + cls + '" data-sid="' + line.nodeId + '">' + escaped + '</span>';
+                if (i < displayLines.length - 1) html += '\n';
+            }
+            html += '</pre>';
             tree.innerHTML = html;
 
             // Attach click handlers
-            tree.querySelectorAll('.sidebar-tree-node').forEach(function(el) {
+            tree.querySelectorAll('.sidebar-preview-line').forEach(function(el) {
                 el.addEventListener('click', function() {
                     var nid = el.getAttribute('data-sid');
                     if (nid) focusNodeFromSidebar(nid);
@@ -2229,9 +2245,61 @@
             });
 
             // Auto-scroll active item into view within sidebar
-            var activeEl = tree.querySelector('.sidebar-tree-node.active');
+            var activeEl = tree.querySelector('.sidebar-preview-line.active');
             if (activeEl) {
                 activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        // Generate preview lines with node-id mapping (similar to generateCopyText but returns structured array)
+        function generatePreviewLines(node, level, parentContinues, format, useBorder, lines) {
+            var iconLevel = Math.min(level + 1, 4);
+            var icons = levelIcons[format];
+            var icon = icons ? (icons[iconLevel] + ' ') : '';
+
+            var lineText = '';
+            if (level === 0) {
+                lineText = icon + node.text;
+            } else {
+                var prefix = '';
+                for (var i = 0; i < level - 1; i++) {
+                    if (useBorder) {
+                        prefix += parentContinues[i] ? '│  ' : '   ';
+                    } else {
+                        prefix += '  ';
+                    }
+                }
+                var isLast = (parentContinues[level - 1] === false);
+                var connector;
+                if (useBorder) {
+                    connector = isLast ? '└─ ' : '├─ ';
+                } else {
+                    connector = '  ';
+                }
+                lineText = prefix + connector + icon + node.text;
+            }
+            // Replace newlines in node text with space for single-line display
+            lineText = lineText.replace(/\n/g, ' ');
+            lines.push({ text: lineText, nodeId: node.id });
+
+            for (var i = 0; i < node.children.length; i++) {
+                var isLastChild = (i === node.children.length - 1);
+                var newContinues = parentContinues.slice();
+                newContinues.push(!isLastChild);
+                generatePreviewLines(node.children[i], level + 1, newContinues, format, useBorder, lines);
+            }
+
+            // Separator blank line between sibling groups (border mode only)
+            if (useBorder && level > 0 && node.children.length > 0) {
+                var amILast = (parentContinues[level - 1] === false);
+                if (!amILast) {
+                    var sep = '';
+                    for (var i = 0; i < level - 1; i++) {
+                        sep += parentContinues[i] ? '│  ' : '   ';
+                    }
+                    sep += '│';
+                    lines.push({ text: sep, nodeId: '', isSep: true });
+                }
             }
         }
 
