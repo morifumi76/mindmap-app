@@ -496,6 +496,7 @@
 
         let selectedNodeIds = new Set();
         let lastSelectedNodeId = null;
+        let selectionAnchorId = null; // Anchor node for Shift+Arrow range selection
         let editingNodeId = null;
 
         let viewState = {
@@ -819,6 +820,7 @@
             if (nodeId) {
                 selectedNodeIds.add(nodeId);
                 lastSelectedNodeId = nodeId;
+                selectionAnchorId = nodeId;
                 updateSelectionDisplay();
                 scrollNodeIntoView(nodeId);
             }
@@ -827,6 +829,7 @@
         function clearSelection() {
             selectedNodeIds.clear();
             lastSelectedNodeId = null;
+            selectionAnchorId = null;
             document.querySelectorAll('.node.selected').forEach(function(el) {
                 el.classList.remove('selected');
             });
@@ -850,19 +853,22 @@
 
         function rangeSelectNode(nodeId) {
             if (!lastSelectedNodeId) { selectNode(nodeId); return; }
+            // Preserve the anchor: if no anchor yet, use lastSelectedNodeId
+            if (!selectionAnchorId) selectionAnchorId = lastSelectedNodeId;
             var allNodes = getAllNodesInOrder();
             var si = -1, ei = -1;
             for (var i = 0; i < allNodes.length; i++) {
-                if (allNodes[i].id === lastSelectedNodeId) si = i;
+                if (allNodes[i].id === selectionAnchorId) si = i;
                 if (allNodes[i].id === nodeId) ei = i;
             }
             if (si === -1 || ei === -1) { selectNode(nodeId); return; }
             var mn = Math.min(si, ei), mx = Math.max(si, ei);
-            clearSelection();
+            selectedNodeIds.clear();
             for (var i = mn; i <= mx; i++) {
                 selectedNodeIds.add(allNodes[i].id);
             }
             lastSelectedNodeId = nodeId;
+            // Keep selectionAnchorId unchanged so further Shift+clicks extend from original anchor
             updateSelectionDisplay();
         }
 
@@ -880,24 +886,107 @@
             return nodes;
         }
 
-        // Navigate UP: same-level siblings only
+        // Collect all nodes at a given depth level in tree-walk (visual) order
+        function getNodesAtLevel(targetLevel, node, currentLevel) {
+            if (node === undefined) node = mindMapData.root;
+            if (currentLevel === undefined) currentLevel = 1;
+            var result = [];
+            if (currentLevel === targetLevel) {
+                result.push(node);
+                return result;
+            }
+            for (var i = 0; i < node.children.length; i++) {
+                var childResults = getNodesAtLevel(targetLevel, node.children[i], currentLevel + 1);
+                for (var j = 0; j < childResults.length; j++) {
+                    result.push(childResults[j]);
+                }
+            }
+            return result;
+        }
+
+        // Navigate UP: cross-parent, same depth level
         function navigateUp() {
             var cid = getSelectedNodeId();
             if (!cid) { selectNode('root'); return; }
-            var r = findNode(cid);
-            if (r && r.parent && r.index > 0) {
-                selectNode(r.parent.children[r.index - 1].id);
+            var level = getNodeLevel(cid);
+            if (!level || level <= 1) return; // root has no same-level peers
+            var nodesAtLevel = getNodesAtLevel(level);
+            var idx = -1;
+            for (var i = 0; i < nodesAtLevel.length; i++) {
+                if (nodesAtLevel[i].id === cid) { idx = i; break; }
+            }
+            if (idx > 0) {
+                selectNode(nodesAtLevel[idx - 1].id);
             }
         }
 
-        // Navigate DOWN: same-level siblings only
+        // Navigate DOWN: cross-parent, same depth level
         function navigateDown() {
             var cid = getSelectedNodeId();
             if (!cid) { selectNode('root'); return; }
-            var r = findNode(cid);
-            if (r && r.parent && r.index < r.parent.children.length - 1) {
-                selectNode(r.parent.children[r.index + 1].id);
+            var level = getNodeLevel(cid);
+            if (!level || level <= 1) return;
+            var nodesAtLevel = getNodesAtLevel(level);
+            var idx = -1;
+            for (var i = 0; i < nodesAtLevel.length; i++) {
+                if (nodesAtLevel[i].id === cid) { idx = i; break; }
             }
+            if (idx >= 0 && idx < nodesAtLevel.length - 1) {
+                selectNode(nodesAtLevel[idx + 1].id);
+            }
+        }
+
+        // Shift+Arrow range selection: extend/shrink from anchor along same depth
+        function shiftNavigateUp() {
+            var cid = getSelectedNodeId();
+            if (!cid) return;
+            if (!selectionAnchorId) selectionAnchorId = cid;
+            var level = getNodeLevel(cid);
+            if (!level || level <= 1) return;
+            var nodesAtLevel = getNodesAtLevel(level);
+            var curIdx = -1;
+            for (var i = 0; i < nodesAtLevel.length; i++) {
+                if (nodesAtLevel[i].id === cid) { curIdx = i; break; }
+            }
+            if (curIdx <= 0) return;
+            var newEndId = nodesAtLevel[curIdx - 1].id;
+            applyRangeAtLevel(nodesAtLevel, selectionAnchorId, newEndId);
+            lastSelectedNodeId = newEndId;
+            scrollNodeIntoView(newEndId);
+        }
+
+        function shiftNavigateDown() {
+            var cid = getSelectedNodeId();
+            if (!cid) return;
+            if (!selectionAnchorId) selectionAnchorId = cid;
+            var level = getNodeLevel(cid);
+            if (!level || level <= 1) return;
+            var nodesAtLevel = getNodesAtLevel(level);
+            var curIdx = -1;
+            for (var i = 0; i < nodesAtLevel.length; i++) {
+                if (nodesAtLevel[i].id === cid) { curIdx = i; break; }
+            }
+            if (curIdx < 0 || curIdx >= nodesAtLevel.length - 1) return;
+            var newEndId = nodesAtLevel[curIdx + 1].id;
+            applyRangeAtLevel(nodesAtLevel, selectionAnchorId, newEndId);
+            lastSelectedNodeId = newEndId;
+            scrollNodeIntoView(newEndId);
+        }
+
+        // Select all nodes between anchor and end within the given level-node list
+        function applyRangeAtLevel(nodesAtLevel, anchorId, endId) {
+            var ai = -1, ei = -1;
+            for (var i = 0; i < nodesAtLevel.length; i++) {
+                if (nodesAtLevel[i].id === anchorId) ai = i;
+                if (nodesAtLevel[i].id === endId) ei = i;
+            }
+            if (ai === -1 || ei === -1) return;
+            var mn = Math.min(ai, ei), mx = Math.max(ai, ei);
+            selectedNodeIds.clear();
+            for (var i = mn; i <= mx; i++) {
+                selectedNodeIds.add(nodesAtLevel[i].id);
+            }
+            updateSelectionDisplay();
         }
 
         // Navigate LEFT: go to parent
@@ -1789,11 +1878,13 @@
                 case 'ArrowUp':
                     e.preventDefault();
                     if (cmdKey) { if (currentId) moveNodeUp(currentId); }
+                    else if (e.shiftKey) { shiftNavigateUp(); }
                     else navigateUp();
                     break;
                 case 'ArrowDown':
                     e.preventDefault();
                     if (cmdKey) { if (currentId) moveNodeDown(currentId); }
+                    else if (e.shiftKey) { shiftNavigateDown(); }
                     else navigateDown();
                     break;
                 case 'ArrowLeft':
@@ -2040,6 +2131,8 @@
 
         // Expose for testing/integration
         window.getCurrentCopyText = getCurrentCopyText;
+        window.getSelectedNodeIds = function() { return selectedNodeIds; };
+        window.getMindMapData = function() { return mindMapData; };
 
     })();
     </script>
