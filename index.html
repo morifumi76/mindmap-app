@@ -342,6 +342,12 @@
             flex-shrink: 0;
             font-size: 13px;
             line-height: 1;
+            width: 0;
+            overflow: hidden;
+        }
+
+        .map-item-icon:not(:empty) {
+            width: auto;
         }
 
         .map-item-name {
@@ -416,6 +422,122 @@
 
         .left-sidebar-float-toggle.show {
             display: flex;
+        }
+
+        /* Map item indentation for child level */
+        .map-item.child-item {
+            padding-left: 28px;
+        }
+
+        /* Folder expand/collapse toggle */
+        .map-item-toggle {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            border: none;
+            border-radius: 3px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 10px;
+            color: #91918e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: background 0.08s;
+        }
+
+        .map-item-toggle:hover {
+            background: rgba(0,0,0,0.06);
+        }
+
+        /* Map item inline rename input */
+        .map-item-rename-input {
+            flex: 1;
+            min-width: 0;
+            font-size: 13px;
+            font-family: var(--font-family);
+            color: #37352f;
+            border: 1px solid var(--primary-color);
+            border-radius: 3px;
+            padding: 1px 4px;
+            outline: none;
+            background: #fff;
+        }
+
+        /* Sort toggle in My Maps header */
+        .left-sidebar-sort-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-right: 4px;
+        }
+
+        .left-sidebar-sort-label {
+            font-size: 11px;
+            color: #91918e;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .sort-toggle-switch {
+            position: relative;
+            width: 32px;
+            height: 16px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .sort-toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+
+        .sort-toggle-slider {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #d4d4d4;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .sort-toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            left: 2px;
+            top: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+        }
+
+        .sort-toggle-switch input:checked + .sort-toggle-slider {
+            background: #37352f;
+        }
+
+        .sort-toggle-switch input:checked + .sort-toggle-slider::before {
+            transform: translateX(16px);
+        }
+
+        /* Drag-over indicators for My Maps list items */
+        .map-item.drag-over-above {
+            border-top: 2px solid var(--primary-color);
+        }
+
+        .map-item.drag-over-below {
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .map-item.drag-over-into {
+            background: rgba(74, 144, 217, 0.12);
+        }
+
+        .map-item.map-dragging {
+            opacity: 0.4;
         }
 
         /* Context menu – Notion style */
@@ -805,7 +927,16 @@
         <div class="left-sidebar-content" id="leftSidebarContent">
             <div class="left-sidebar-header">
                 <span class="left-sidebar-header-label">📂 マイマップ</span>
-                <div class="left-sidebar-toggle-btn" id="leftSidebarToggle" title="サイドバーを閉じる">«</div>
+                <div style="display:flex;align-items:center;gap:2px;">
+                    <div class="left-sidebar-sort-toggle">
+                        <span class="left-sidebar-sort-label">アルファベット順</span>
+                        <label class="sort-toggle-switch" id="sortToggle">
+                            <input type="checkbox" id="sortToggleInput">
+                            <span class="sort-toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="left-sidebar-toggle-btn" id="leftSidebarToggle" title="サイドバーを閉じる">«</div>
+                </div>
             </div>
             <button class="left-sidebar-new-btn" id="newMapBtn">＋ 新規作成</button>
             <div class="left-sidebar-list" id="mapList"></div>
@@ -816,6 +947,7 @@
     <!-- Context Menu for Map Items -->
     <div class="ctx-menu" id="ctxMenu">
         <div class="ctx-menu-item" data-action="rename">✏️ 名前変更</div>
+        <div class="ctx-menu-item" data-action="add-child-map">子マップを追加</div>
         <div class="ctx-menu-item" data-action="duplicate">📑 複製</div>
         <div class="ctx-menu-item danger" data-action="delete">🗑 削除</div>
     </div>
@@ -1029,9 +1161,43 @@
             return new Date().toISOString();
         }
 
+        var SORT_MODE_KEY = 'mindmap-sort-mode';
+        var COLLAPSE_STATE_KEY = 'mindmap-collapse-state';
+
+        function getSortMode() {
+            return localStorage.getItem(SORT_MODE_KEY) || 'none';
+        }
+        function setSortMode(mode) {
+            try { localStorage.setItem(SORT_MODE_KEY, mode); } catch(e) {}
+        }
+        function getCollapseState() {
+            try {
+                var raw = localStorage.getItem(COLLAPSE_STATE_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return {};
+        }
+        function setCollapseState(state) {
+            try { localStorage.setItem(COLLAPSE_STATE_KEY, JSON.stringify(state)); } catch(e) {}
+        }
+
         // ---- Migration from old single-map storage ----
         function migrateIfNeeded() {
-            // If meta already exists, skip migration
+            // v4 migration: add parentId and order to existing meta entries
+            if (!localStorage.getItem('mindmap-migrated-v4')) {
+                var existing = getMetaList();
+                if (existing.length > 0) {
+                    for (var i = 0; i < existing.length; i++) {
+                        if (existing[i].parentId === undefined) existing[i].parentId = null;
+                        if (existing[i].order === undefined) existing[i].order = i;
+                    }
+                    saveMetaList(existing);
+                    setSortMode('none');
+                }
+                try { localStorage.setItem('mindmap-migrated-v4', '1'); } catch(e) {}
+            }
+
+            // If meta already exists, skip old migration
             if (localStorage.getItem(META_KEY)) return;
 
             var oldData = null;
@@ -1050,7 +1216,7 @@
                 // Migrate existing data as map ID 1
                 var mapId = getNextMapId();
                 var mapName = oldData.root.text || '無題のマップ';
-                var meta = { id: mapId, name: mapName, createdAt: now, updatedAt: now };
+                var meta = { id: mapId, name: mapName, createdAt: now, updatedAt: now, parentId: null, order: 0 };
                 saveMetaList([meta]);
                 try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(oldData)); } catch(e) {}
                 setLastActiveId(mapId);
@@ -1060,7 +1226,7 @@
                 // No existing data: create initial empty map
                 var mapId = getNextMapId();
                 var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
-                var meta = { id: mapId, name: '無題のマップ', createdAt: now, updatedAt: now };
+                var meta = { id: mapId, name: '無題のマップ', createdAt: now, updatedAt: now, parentId: null, order: 0 };
                 saveMetaList([meta]);
                 try { localStorage.setItem(getMapDataKey(mapId), JSON.stringify(defaultData)); } catch(e) {}
                 setLastActiveId(mapId);
@@ -1073,11 +1239,14 @@
             try {
                 localStorage.setItem(getMapDataKey(currentMapId), JSON.stringify(mindMapData));
             } catch(e) {}
-            // Update meta updatedAt
+            // Update meta updatedAt and ensure name synced to root text
             var metaList = getMetaList();
             for (var i = 0; i < metaList.length; i++) {
                 if (metaList[i].id === currentMapId) {
                     metaList[i].updatedAt = nowISO();
+                    // Ensure parentId and order exist
+                    if (metaList[i].parentId === undefined) metaList[i].parentId = null;
+                    if (metaList[i].order === undefined) metaList[i].order = i;
                     break;
                 }
             }
@@ -2325,6 +2494,15 @@
             var isMac = /Mac/.test(navigator.platform);
             var cmdKey = isMac ? e.metaKey : e.ctrlKey;
 
+            // If focus is in a rename input field in My Maps sidebar, do NOT handle shortcuts
+            var activeEl = document.activeElement;
+            if (activeEl && (activeEl.classList.contains('map-item-rename-input') ||
+                (activeEl.classList.contains('map-item-name') && activeEl.contentEditable === 'true'))) {
+                // Allow default behavior for the rename input
+                // Only handle Enter/Escape which are handled by the input's own listener
+                return;
+            }
+
             // While editing
             if (editingNodeId) {
                 // IME入力中（ローマ字→日本語変換）のキーは無視する
@@ -2649,7 +2827,7 @@
                 var newId = getNextMapId();
                 var now = nowISO();
                 var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
-                saveMetaList([{ id: newId, name: '無題のマップ', createdAt: now, updatedAt: now }]);
+                saveMetaList([{ id: newId, name: '無題のマップ', createdAt: now, updatedAt: now, parentId: null, order: 0 }]);
                 try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
                 currentMapId = newId;
             }
@@ -2683,6 +2861,16 @@
             document.getElementById('copyBorder').value = savedBorder || 'border';
             // Sync toggle button UI with saved state
             syncToggleButtons();
+
+            // Sort toggle
+            var sortInput = document.getElementById('sortToggleInput');
+            if (sortInput) {
+                sortInput.checked = (getSortMode() === 'alpha');
+                sortInput.addEventListener('change', function() {
+                    setSortMode(this.checked ? 'alpha' : 'none');
+                    renderMapList();
+                });
+            }
 
             // Toggle switch: ひよこ ON/OFF
             document.getElementById('toggleHiyokoInput').addEventListener('change', function() {
@@ -3069,6 +3257,8 @@
                     duplicateMap(targetId);
                 } else if (action === 'delete') {
                     deleteMap(targetId);
+                } else if (action === 'add-child-map') {
+                    createChildMap(targetId);
                 }
             });
 
@@ -3128,55 +3318,296 @@
             adjustCanvasForSidebars();
         }
 
-        // ---- Render Map List ----
+        // ---- Render Map List (Two-Level Tree) ----
         function renderMapList() {
             var list = document.getElementById('mapList');
             if (!list) return;
             var metaList = getMetaList();
-            // Sort by updatedAt desc
-            metaList.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+            var sortMode = getSortMode();
+            var collapseState = getCollapseState();
+
+            // Ensure all entries have parentId and order
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].parentId === undefined) metaList[i].parentId = null;
+                if (metaList[i].order === undefined) metaList[i].order = i;
+            }
+
+            // Separate parents (top-level) and children
+            var parents = metaList.filter(function(m) { return m.parentId === null; });
+            var childrenMap = {}; // parentId -> [children]
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].parentId !== null) {
+                    if (!childrenMap[metaList[i].parentId]) childrenMap[metaList[i].parentId] = [];
+                    childrenMap[metaList[i].parentId].push(metaList[i]);
+                }
+            }
+
+            // Sort
+            if (sortMode === 'alpha') {
+                parents.sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+                for (var pid in childrenMap) {
+                    childrenMap[pid].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+                }
+            } else {
+                parents.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+                for (var pid in childrenMap) {
+                    childrenMap[pid].sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+                }
+            }
 
             list.innerHTML = '';
-            for (var i = 0; i < metaList.length; i++) {
-                var meta = metaList[i];
-                var isActive = (meta.id === currentMapId);
-                var item = document.createElement('div');
-                item.className = 'map-item' + (isActive ? ' active' : '');
-                item.dataset.mapId = meta.id;
+            var isDndEnabled = (sortMode !== 'alpha');
 
-                var icon = document.createElement('span');
-                icon.className = 'map-item-icon';
-                icon.textContent = isActive ? '📌' : '📄';
+            for (var pi = 0; pi < parents.length; pi++) {
+                var parentMeta = parents[pi];
+                var hasChildren = childrenMap[parentMeta.id] && childrenMap[parentMeta.id].length > 0;
+                var isCollapsed = collapseState[parentMeta.id] === true;
+                var isActive = (parentMeta.id === currentMapId);
 
-                var name = document.createElement('span');
-                name.className = 'map-item-name';
-                name.textContent = meta.name;
-                name.title = meta.name;
+                var parentItem = createMapItemElement(parentMeta, isActive, hasChildren, isCollapsed, false, isDndEnabled);
+                list.appendChild(parentItem);
 
-                var menuBtn = document.createElement('button');
-                menuBtn.className = 'map-item-menu-btn';
-                menuBtn.textContent = '⋯';
-                menuBtn.title = 'メニュー';
-
-                item.appendChild(icon);
-                item.appendChild(name);
-                item.appendChild(menuBtn);
-
-                // Click on item -> switch map
-                (function(mapId) {
-                    item.addEventListener('click', function(e) {
-                        if (e.target === menuBtn || e.target.classList.contains('map-item-menu-btn')) return;
-                        if (e.target.contentEditable === 'true') return;
-                        switchToMap(mapId);
-                    });
-                    menuBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        showContextMenu(mapId, menuBtn);
-                    });
-                })(meta.id);
-
-                list.appendChild(item);
+                // Render children if not collapsed
+                if (hasChildren && !isCollapsed) {
+                    var children = childrenMap[parentMeta.id];
+                    for (var ci = 0; ci < children.length; ci++) {
+                        var childMeta = children[ci];
+                        var isChildActive = (childMeta.id === currentMapId);
+                        var childItem = createMapItemElement(childMeta, isChildActive, false, false, true, isDndEnabled);
+                        list.appendChild(childItem);
+                    }
+                }
             }
+
+            // Also render orphaned children (whose parent was deleted) as top-level
+            var allParentIds = {};
+            for (var i = 0; i < parents.length; i++) allParentIds[parents[i].id] = true;
+            for (var i = 0; i < metaList.length; i++) {
+                var m = metaList[i];
+                if (m.parentId !== null && !allParentIds[m.parentId]) {
+                    // Orphan: reset to top level
+                    m.parentId = null;
+                    m.order = parents.length + i;
+                    var isOrphanActive = (m.id === currentMapId);
+                    var orphanItem = createMapItemElement(m, isOrphanActive, false, false, false, isDndEnabled);
+                    list.appendChild(orphanItem);
+                }
+            }
+            // Save corrected meta if orphans were found
+            saveMetaList(metaList);
+        }
+
+        function createMapItemElement(meta, isActive, hasChildren, isCollapsed, isChild, isDndEnabled) {
+            var item = document.createElement('div');
+            item.className = 'map-item' + (isActive ? ' active' : '') + (isChild ? ' child-item' : '');
+            item.dataset.mapId = meta.id;
+            item.dataset.parentId = meta.parentId || '';
+            if (isDndEnabled) {
+                item.draggable = true;
+            }
+
+            // Expand/collapse toggle for parents
+            if (hasChildren) {
+                var toggle = document.createElement('button');
+                toggle.className = 'map-item-toggle';
+                toggle.textContent = isCollapsed ? '►' : '▼';
+                toggle.title = isCollapsed ? '展開' : '折りたたむ';
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var cs = getCollapseState();
+                    cs[meta.id] = !isCollapsed;
+                    setCollapseState(cs);
+                    renderMapList();
+                });
+                item.appendChild(toggle);
+            } else if (!isChild) {
+                // Folder icon for parents without children (placeholder for alignment)
+                var spacer = document.createElement('span');
+                spacer.className = 'map-item-toggle';
+                spacer.style.visibility = 'hidden';
+                spacer.textContent = '►';
+                item.appendChild(spacer);
+            }
+
+            var icon = document.createElement('span');
+            icon.className = 'map-item-icon';
+            if (isActive) {
+                icon.textContent = '📌';
+            } else {
+                icon.textContent = '';
+            }
+
+            var name = document.createElement('span');
+            name.className = 'map-item-name';
+            name.textContent = meta.name;
+            name.title = meta.name;
+
+            var menuBtn = document.createElement('button');
+            menuBtn.className = 'map-item-menu-btn';
+            menuBtn.textContent = '⋯';
+            menuBtn.title = 'メニュー';
+
+            item.appendChild(icon);
+            item.appendChild(name);
+            item.appendChild(menuBtn);
+
+            // Click on item -> switch map
+            (function(mapId, itemEl, nameEl, menuBtnEl) {
+                itemEl.addEventListener('click', function(e) {
+                    if (e.target === menuBtnEl || e.target.classList.contains('map-item-menu-btn')) return;
+                    if (e.target.contentEditable === 'true') return;
+                    if (e.target.tagName === 'INPUT') return;
+                    if (e.target.classList.contains('map-item-toggle')) return;
+                    switchToMap(mapId);
+                });
+                menuBtnEl.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showContextMenu(mapId, menuBtnEl);
+                });
+                // Double-click to inline rename
+                nameEl.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    startInlineRename(mapId);
+                });
+
+                // Drag & Drop
+                if (isDndEnabled) {
+                    itemEl.addEventListener('dragstart', function(e) {
+                        e.dataTransfer.setData('text/plain', String(mapId));
+                        e.dataTransfer.effectAllowed = 'move';
+                        itemEl.classList.add('map-dragging');
+                        mapDragState.draggingId = mapId;
+                    });
+                    itemEl.addEventListener('dragend', function(e) {
+                        itemEl.classList.remove('map-dragging');
+                        clearMapDragIndicators();
+                        mapDragState.draggingId = null;
+                    });
+                    itemEl.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        clearMapDragIndicators();
+                        if (mapDragState.draggingId === mapId) return;
+                        var rect = itemEl.getBoundingClientRect();
+                        var relY = e.clientY - rect.top;
+                        var h = rect.height;
+                        var dragMeta = findMetaById(mapDragState.draggingId);
+                        var targetMeta = findMetaById(mapId);
+                        if (!dragMeta || !targetMeta) return;
+
+                        // Determine drop zone
+                        if (relY < h * 0.25) {
+                            itemEl.classList.add('drag-over-above');
+                            mapDragState.dropTarget = { id: mapId, position: 'above' };
+                        } else if (relY > h * 0.75) {
+                            itemEl.classList.add('drag-over-below');
+                            mapDragState.dropTarget = { id: mapId, position: 'below' };
+                        } else {
+                            // Drop into (make child) - only if target is top-level and dragged item is top-level
+                            // or drop as sibling
+                            if (targetMeta.parentId === null && dragMeta.parentId === null) {
+                                itemEl.classList.add('drag-over-into');
+                                mapDragState.dropTarget = { id: mapId, position: 'into' };
+                            } else {
+                                itemEl.classList.add('drag-over-below');
+                                mapDragState.dropTarget = { id: mapId, position: 'below' };
+                            }
+                        }
+                    });
+                    itemEl.addEventListener('dragleave', function(e) {
+                        itemEl.classList.remove('drag-over-above', 'drag-over-below', 'drag-over-into');
+                    });
+                    itemEl.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        clearMapDragIndicators();
+                        if (!mapDragState.draggingId || !mapDragState.dropTarget) return;
+                        handleMapDrop(mapDragState.draggingId, mapDragState.dropTarget.id, mapDragState.dropTarget.position);
+                        mapDragState.draggingId = null;
+                        mapDragState.dropTarget = null;
+                    });
+                }
+            })(meta.id, item, name, menuBtn);
+
+            return item;
+        }
+
+        // ---- Map Drag & Drop State ----
+        var mapDragState = {
+            draggingId: null,
+            dropTarget: null
+        };
+
+        function clearMapDragIndicators() {
+            document.querySelectorAll('.map-item').forEach(function(el) {
+                el.classList.remove('drag-over-above', 'drag-over-below', 'drag-over-into');
+            });
+        }
+
+        function handleMapDrop(dragId, targetId, position) {
+            if (dragId === targetId) return;
+            var metaList = getMetaList();
+            var dragMeta = null, targetMeta = null;
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].id === dragId) dragMeta = metaList[i];
+                if (metaList[i].id === targetId) targetMeta = metaList[i];
+            }
+            if (!dragMeta || !targetMeta) return;
+
+            if (position === 'into') {
+                // Make dragged item a child of target (only if target is top-level)
+                if (targetMeta.parentId !== null) return; // Can't nest deeper than 2 levels
+                if (dragMeta.parentId !== null && dragMeta.parentId === targetId) return; // Already a child
+                // If dragged is a parent with children, move children to top-level first
+                var dragChildren = metaList.filter(function(m) { return m.parentId === dragId; });
+                for (var i = 0; i < dragChildren.length; i++) {
+                    dragChildren[i].parentId = null;
+                }
+                dragMeta.parentId = targetId;
+                // Set order to end of target's children
+                var targetChildren = metaList.filter(function(m) { return m.parentId === targetId; });
+                dragMeta.order = targetChildren.length > 0 ? Math.max.apply(null, targetChildren.map(function(m) { return m.order || 0; })) + 1 : 0;
+            } else {
+                // above or below: place at same level as target
+                var targetParentId = targetMeta.parentId;
+                // If dragging a top-level item to become a sibling of a child item
+                // that means it becomes a child of the same parent
+                if (targetParentId !== null) {
+                    // Check 2-level limit: if dragMeta has children, it can't become a child
+                    var dragHasChildren = metaList.some(function(m) { return m.parentId === dragId; });
+                    if (dragHasChildren) {
+                        // Move children to top level first
+                        metaList.forEach(function(m) {
+                            if (m.parentId === dragId) m.parentId = null;
+                        });
+                    }
+                }
+                dragMeta.parentId = targetParentId;
+
+                // Reorder siblings
+                var siblings = metaList.filter(function(m) {
+                    return m.parentId === targetParentId && m.id !== dragId;
+                });
+                siblings.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+
+                // Find target index in siblings
+                var targetIdx = -1;
+                for (var i = 0; i < siblings.length; i++) {
+                    if (siblings[i].id === targetId) { targetIdx = i; break; }
+                }
+                if (targetIdx === -1) targetIdx = siblings.length - 1;
+
+                if (position === 'below') targetIdx++;
+                siblings.splice(targetIdx, 0, dragMeta);
+
+                // Reassign order
+                for (var i = 0; i < siblings.length; i++) {
+                    siblings[i].order = i;
+                }
+            }
+
+            saveMetaList(metaList);
+            renderMapList();
         }
 
         // ---- Context Menu ----
@@ -3186,6 +3617,15 @@
             var rect = anchorEl.getBoundingClientRect();
             cm.style.top = rect.bottom + 4 + 'px';
             cm.style.left = rect.left + 'px';
+
+            // Show/hide "子マップを追加" based on whether target is a top-level item
+            var meta = findMetaById(mapId);
+            var addChildItem = cm.querySelector('[data-action="add-child-map"]');
+            if (addChildItem) {
+                // Only show for top-level items (parentId === null)
+                addChildItem.style.display = (meta && meta.parentId === null) ? '' : 'none';
+            }
+
             // Ensure it doesn't go off-screen
             cm.classList.add('show');
             var cmRect = cm.getBoundingClientRect();
@@ -3208,15 +3648,64 @@
             var newId = getNextMapId();
             var now = nowISO();
             var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
-            var meta = { id: newId, name: '無題のマップ', createdAt: now, updatedAt: now };
 
+            // Get max order among top-level items
             var metaList = getMetaList();
+            var maxOrder = 0;
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].parentId === null && (metaList[i].order || 0) >= maxOrder) {
+                    maxOrder = (metaList[i].order || 0) + 1;
+                }
+            }
+
+            var meta = { id: newId, name: '無題のマップ', createdAt: now, updatedAt: now, parentId: null, order: maxOrder };
+
             metaList.push(meta);
             saveMetaList(metaList);
             try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
 
             switchToMap(newId);
             showToast('📄 新しいマップを作成しました');
+        }
+
+        function createChildMap(parentMapId) {
+            // Verify parent is top-level
+            var parentMeta = findMetaById(parentMapId);
+            if (!parentMeta || parentMeta.parentId !== null) {
+                showToast('⚠️ 子マップの下には追加できません');
+                return;
+            }
+
+            saveToLocalStorage();
+
+            var newId = getNextMapId();
+            var now = nowISO();
+            var defaultData = { root: { id: 'root', text: '中心テーマ', children: [] } };
+
+            // Get max order among siblings (children of same parent)
+            var metaList = getMetaList();
+            var maxOrder = 0;
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].parentId === parentMapId && (metaList[i].order || 0) >= maxOrder) {
+                    maxOrder = (metaList[i].order || 0) + 1;
+                }
+            }
+
+            var meta = { id: newId, name: '無題のマップ', createdAt: now, updatedAt: now, parentId: parentMapId, order: maxOrder };
+            metaList.push(meta);
+            saveMetaList(metaList);
+            try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(defaultData)); } catch(e) {}
+
+            // Expand the parent
+            var cs = getCollapseState();
+            cs[parentMapId] = false;
+            setCollapseState(cs);
+
+            switchToMap(newId);
+            showToast('📄 子マップを作成しました');
+
+            // Enter rename mode for the new map
+            setTimeout(function() { startInlineRename(newId); }, 200);
         }
 
         function switchToMap(mapId) {
@@ -3265,14 +3754,26 @@
 
             var newId = getNextMapId();
             var now = nowISO();
+
+            // Get max order among siblings
+            var metaList = getMetaList();
+            var siblingParentId = srcMeta.parentId;
+            var maxOrder = 0;
+            for (var i = 0; i < metaList.length; i++) {
+                if (metaList[i].parentId === siblingParentId && (metaList[i].order || 0) >= maxOrder) {
+                    maxOrder = (metaList[i].order || 0) + 1;
+                }
+            }
+
             var newMeta = {
                 id: newId,
                 name: srcMeta.name + ' のコピー',
                 createdAt: now,
-                updatedAt: now
+                updatedAt: now,
+                parentId: srcMeta.parentId,
+                order: maxOrder
             };
 
-            var metaList = getMetaList();
             metaList.push(newMeta);
             saveMetaList(metaList);
             try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(deepClone(srcData))); } catch(e) {}
@@ -3289,11 +3790,28 @@
             }
             if (!confirm('このマップを削除しますか？')) return;
 
-            // Remove from meta
+            // If deleting a parent, also check if it has children
+            var childMaps = metaList.filter(function(m) { return m.parentId === mapId; });
+
+            // Remove from meta (the map itself)
             var newMeta = [];
             for (var i = 0; i < metaList.length; i++) {
                 if (metaList[i].id !== mapId) newMeta.push(metaList[i]);
             }
+
+            // Move children to top-level if deleting a parent
+            for (var i = 0; i < newMeta.length; i++) {
+                if (newMeta[i].parentId === mapId) {
+                    newMeta[i].parentId = null;
+                }
+            }
+
+            // Ensure at least 1 map remains
+            if (newMeta.length === 0) {
+                showToast('⚠️ 最後のマップは削除できません');
+                return;
+            }
+
             saveMetaList(newMeta);
             try { localStorage.removeItem(getMapDataKey(mapId)); } catch(e) {}
 
@@ -3313,50 +3831,54 @@
             var nameEl = item.querySelector('.map-item-name');
             if (!nameEl) return;
 
-            nameEl.contentEditable = 'true';
-            nameEl.focus();
-            // Select all text
-            var range = document.createRange();
-            range.selectNodeContents(nameEl);
-            var sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
+            // Replace name span with an input element
+            var currentName = nameEl.textContent;
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'map-item-rename-input';
+            input.value = currentName;
 
-            function finish() {
-                nameEl.contentEditable = 'false';
-                var newName = nameEl.textContent.trim() || '無題のマップ';
-                nameEl.textContent = newName;
+            nameEl.style.display = 'none';
+            nameEl.parentNode.insertBefore(input, nameEl.nextSibling);
+            input.focus();
+            input.select();
 
-                var metaList = getMetaList();
-                for (var i = 0; i < metaList.length; i++) {
-                    if (metaList[i].id === mapId) {
-                        metaList[i].name = newName;
-                        metaList[i].updatedAt = nowISO();
-                        break;
+            var finished = false;
+            function finish(save) {
+                if (finished) return;
+                finished = true;
+                var newName = save ? (input.value.trim() || '無題のマップ') : currentName;
+                nameEl.style.display = '';
+                if (input.parentNode) input.parentNode.removeChild(input);
+
+                if (save) {
+                    var metaList = getMetaList();
+                    for (var i = 0; i < metaList.length; i++) {
+                        if (metaList[i].id === mapId) {
+                            metaList[i].name = newName;
+                            metaList[i].updatedAt = nowISO();
+                            break;
+                        }
                     }
+                    saveMetaList(metaList);
+                    if (mapId === currentMapId) updatePageTitle();
                 }
-                saveMetaList(metaList);
-                if (mapId === currentMapId) updatePageTitle();
                 renderMapList();
-                nameEl.removeEventListener('blur', finish);
-                nameEl.removeEventListener('keydown', onKey);
             }
 
-            function onKey(e) {
+            input.addEventListener('keydown', function(e) {
+                e.stopPropagation(); // Prevent global keyboard handler
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    finish();
+                    finish(true);
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
-                    nameEl.contentEditable = 'false';
-                    renderMapList(); // revert
-                    nameEl.removeEventListener('blur', finish);
-                    nameEl.removeEventListener('keydown', onKey);
+                    finish(false);
                 }
-            }
-
-            nameEl.addEventListener('blur', finish);
-            nameEl.addEventListener('keydown', onKey);
+            });
+            input.addEventListener('blur', function() {
+                finish(true);
+            });
         }
 
         // Expose for testing/integration
@@ -3367,10 +3889,17 @@
         window.getMetaList = getMetaList;
         window.switchToMap = switchToMap;
         window.createNewMap = createNewMap;
+        window.createChildMap = createChildMap;
         window.openRightSidebar = openRightSidebar;
         window.closeRightSidebar = closeRightSidebar;
         window.openLeftSidebar = openLeftSidebar;
         window.closeLeftSidebar = closeLeftSidebar;
+        window.startInlineRename = startInlineRename;
+        window.getSortMode = getSortMode;
+        window.setSortMode = setSortMode;
+        window.getCollapseState = getCollapseState;
+        window.setCollapseState = setCollapseState;
+        window.renderMapList = renderMapList;
 
     })();
     </script>

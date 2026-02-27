@@ -40,9 +40,9 @@ function assert(cond, msg) {
     assert(activeItems === 1, 'Exactly 1 active map');
 
     // ========================================
-    // Test 2: Create New Map
+    // Test 2: Create New Map (top-level)
     // ========================================
-    console.log('\n=== Test 2: Create New Map ===');
+    console.log('\n=== Test 2: Create New Map (Top-Level) ===');
     await newBtn.click();
     await page.waitForTimeout(500);
 
@@ -63,6 +63,11 @@ function assert(cond, msg) {
     });
     assert(meta && meta.length === 2, 'Meta list has 2 entries');
 
+    // Check parentId and order fields exist
+    assert(meta[0].parentId === null, 'First map has parentId: null');
+    assert(meta[0].order !== undefined, 'First map has order field');
+    assert(meta[1].parentId === null, 'Second map has parentId: null');
+
     // Check id counter incremented
     let idCounter = await page.evaluate(() => localStorage.getItem('mindmap-id-counter'));
     assert(parseInt(idCounter) >= 2, 'ID counter is >= 2');
@@ -72,22 +77,41 @@ function assert(cond, msg) {
     assert(lastActiveId !== null, 'Last active ID is saved');
 
     // ========================================
-    // Test 3: Switch Map
+    // Test 3: Two-level tree UI – folder icons & structure
     // ========================================
-    console.log('\n=== Test 3: Switch Between Maps ===');
-    
-    // Get the current map ID
+    console.log('\n=== Test 3: Two-Level Tree UI ===');
+
+    // Active map should have 📌 icon, non-active should have no icon
+    let allIcons = await page.evaluate(() => {
+        var icons = [];
+        document.querySelectorAll('.map-item').forEach(el => {
+            icons.push({
+                icon: el.querySelector('.map-item-icon').textContent,
+                active: el.classList.contains('active')
+            });
+        });
+        return icons;
+    });
+    let nonActiveNoIcon = allIcons.filter(i => !i.active).every(i => i.icon === '');
+    let hasPin = allIcons.some(i => i.active && i.icon === '📌');
+    assert(nonActiveNoIcon || allIcons.length === 1, 'Non-active maps have no icon');
+    assert(hasPin, 'Active map shows pin icon 📌');
+
+    // ========================================
+    // Test 4: Switch Map
+    // ========================================
+    console.log('\n=== Test 4: Switch Between Maps ===');
+
     let currentId = await page.evaluate(() => window.getCurrentMapId());
-    
+
     // Click on the first (non-active) map item
     let firstMapItem = page.locator('.map-item').first();
     let firstMapId = await firstMapItem.getAttribute('data-map-id');
-    
+
     if (firstMapId != currentId) {
         await firstMapItem.click();
         await page.waitForTimeout(500);
     } else {
-        // Click on the second map item
         let secondMapItem = page.locator('.map-item').nth(1);
         await secondMapItem.click();
         await page.waitForTimeout(500);
@@ -96,33 +120,28 @@ function assert(cond, msg) {
     let newCurrentId = await page.evaluate(() => window.getCurrentMapId());
     assert(newCurrentId !== currentId, 'Switched to a different map');
 
-    // URL should be updated
     url = page.url();
     assert(url.includes('id=' + newCurrentId), 'URL updated to new map ID');
 
-    // Active map should change
     let activeMapId = await page.locator('.map-item.active').getAttribute('data-map-id');
     assert(parseInt(activeMapId) === newCurrentId, 'Active map in list matches current');
 
     // ========================================
-    // Test 4: Map data is isolated
+    // Test 5: Map data is isolated
     // ========================================
-    console.log('\n=== Test 4: Map Data Isolation ===');
-    
-    // Add a child node in current map
-    await page.keyboard.press('Escape'); // Clear editing
+    console.log('\n=== Test 5: Map Data Isolation ===');
+
+    await page.keyboard.press('Escape');
     await page.waitForTimeout(100);
-    await page.keyboard.press('Tab'); // Add child
+    await page.keyboard.press('Tab');
     await page.waitForTimeout(300);
     await page.keyboard.type('TestNode');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
 
-    // Remember current map root text
     let mapAData = await page.evaluate(() => window.getMindMapData());
     let mapAChildren = mapAData.root.children.length;
-    
-    // Switch back to the other map
+
     let otherMapItem = page.locator('.map-item').first();
     let otherMapItemId = await otherMapItem.getAttribute('data-map-id');
     if (parseInt(otherMapItemId) === newCurrentId) {
@@ -130,37 +149,32 @@ function assert(cond, msg) {
     }
     await otherMapItem.click();
     await page.waitForTimeout(500);
-    
-    // Other map should NOT have the TestNode
+
     let mapBData = await page.evaluate(() => window.getMindMapData());
-    assert(mapBData.root.children.length !== mapAChildren || mapAChildren === 0, 
+    assert(mapBData.root.children.length !== mapAChildren || mapAChildren === 0,
         'Maps have isolated data');
 
     // ========================================
-    // Test 5: Context Menu - Duplicate
+    // Test 6: Context Menu - Duplicate
     // ========================================
-    console.log('\n=== Test 5: Context Menu - Duplicate ===');
-    
+    console.log('\n=== Test 6: Context Menu - Duplicate ===');
+
     let beforeCount = await page.locator('.map-item').count();
-    
-    // Find a map item and click its menu button
+
     let menuBtn = page.locator('.map-item-menu-btn').first();
     await menuBtn.click();
     await page.waitForTimeout(300);
-    
-    // Context menu should be visible
+
     let ctxMenu = page.locator('#ctxMenu');
     let ctxMenuVisible = await ctxMenu.evaluate(el => el.classList.contains('show'));
     assert(ctxMenuVisible, 'Context menu appears');
 
-    // Click duplicate
     await page.click('[data-action="duplicate"]');
     await page.waitForTimeout(500);
 
     let afterCount = await page.locator('.map-item').count();
     assert(afterCount === beforeCount + 1, 'Duplicate created new map (' + beforeCount + ' -> ' + afterCount + ')');
 
-    // Check that a map with "のコピー" exists
     let allMapNames = await page.evaluate(() => {
         var names = [];
         document.querySelectorAll('.map-item-name').forEach(el => names.push(el.textContent));
@@ -170,10 +184,10 @@ function assert(cond, msg) {
     assert(hasCopy, 'Duplicate map name includes "のコピー"');
 
     // ========================================
-    // Test 6: Context Menu - Rename
+    // Test 7: Context Menu - Rename (uses input element)
     // ========================================
-    console.log('\n=== Test 6: Context Menu - Rename ===');
-    
+    console.log('\n=== Test 7: Context Menu - Rename ===');
+
     menuBtn = page.locator('.map-item-menu-btn').first();
     await menuBtn.click();
     await page.waitForTimeout(300);
@@ -181,18 +195,16 @@ function assert(cond, msg) {
     await page.click('[data-action="rename"]');
     await page.waitForTimeout(300);
 
-    // The name element should be contenteditable
-    let nameEl = page.locator('.map-item-name[contenteditable="true"]');
-    let editableCount = await nameEl.count();
-    assert(editableCount >= 1, 'Name field becomes editable');
+    // The rename input should appear
+    let renameInput = page.locator('.map-item-rename-input');
+    let renameInputCount = await renameInput.count();
+    assert(renameInputCount >= 1, 'Rename input field appears');
 
     // Type new name
-    await page.keyboard.press('Control+a');
-    await page.keyboard.type('My Renamed Map');
+    await renameInput.first().fill('My Renamed Map');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(500);
 
-    // Check name was updated
     allMapNames = await page.evaluate(() => {
         var names = [];
         document.querySelectorAll('.map-item-name').forEach(el => names.push(el.textContent));
@@ -201,7 +213,6 @@ function assert(cond, msg) {
     let hasRenamed = allMapNames.some(n => n === 'My Renamed Map');
     assert(hasRenamed, 'Map renamed successfully');
 
-    // Verify in localStorage
     meta = await page.evaluate(() => {
         try { return JSON.parse(localStorage.getItem('mindmap-meta')); } catch(e) { return null; }
     });
@@ -209,13 +220,32 @@ function assert(cond, msg) {
     assert(renamedMeta !== undefined, 'Renamed map persisted in localStorage meta');
 
     // ========================================
-    // Test 7: Context Menu - Delete
+    // Test 8: Double-click to rename
     // ========================================
-    console.log('\n=== Test 7: Context Menu - Delete ===');
-    
+    console.log('\n=== Test 8: Double-Click Rename ===');
+
+    let nameEl = page.locator('.map-item-name').first();
+    await nameEl.dblclick();
+    await page.waitForTimeout(300);
+
+    renameInput = page.locator('.map-item-rename-input');
+    renameInputCount = await renameInput.count();
+    assert(renameInputCount >= 1, 'Double-click opens rename input');
+
+    // Press Escape to cancel
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+
+    renameInputCount = await page.locator('.map-item-rename-input').count();
+    assert(renameInputCount === 0, 'Escape cancels rename');
+
+    // ========================================
+    // Test 9: Context Menu - Delete
+    // ========================================
+    console.log('\n=== Test 9: Context Menu - Delete ===');
+
     beforeCount = await page.locator('.map-item').count();
-    
-    // Setup dialog handler for confirm
+
     page.on('dialog', async dialog => {
         await dialog.accept();
     });
@@ -231,11 +261,10 @@ function assert(cond, msg) {
     assert(afterCount === beforeCount - 1, 'Map deleted (' + beforeCount + ' -> ' + afterCount + ')');
 
     // ========================================
-    // Test 8: Cannot delete last map
+    // Test 10: Cannot delete last map
     // ========================================
-    console.log('\n=== Test 8: Cannot Delete Last Map ===');
-    
-    // Delete all maps except the last one
+    console.log('\n=== Test 10: Cannot Delete Last Map ===');
+
     while (true) {
         let cnt = await page.locator('.map-item').count();
         if (cnt <= 1) break;
@@ -250,19 +279,17 @@ function assert(cond, msg) {
     assert(finalCount === 1, 'Cannot delete the last map, 1 remains');
 
     // ========================================
-    // Test 9: Persistence across page reload
+    // Test 11: Persistence across page reload
     // ========================================
-    console.log('\n=== Test 9: Persistence Across Reload ===');
-    
+    console.log('\n=== Test 11: Persistence Across Reload ===');
+
     let savedCurrentId = await page.evaluate(() => window.getCurrentMapId());
-    
+
     await page.reload();
     await page.waitForTimeout(1500);
-    
-    // Left sidebar should still be open after reload (default)
+
     let lsCollapsedAfterReload = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
     if (lsCollapsedAfterReload) {
-        // Use floating toggle to reopen
         await page.click('#leftSidebarFloatToggle');
         await page.waitForTimeout(300);
     }
@@ -271,91 +298,257 @@ function assert(cond, msg) {
     assert(reloadedId === savedCurrentId, 'Same map loaded after reload (last active)');
 
     // ========================================
-    // Test 10: URL ?id= parameter loading
+    // Test 12: URL ?id= parameter loading
     // ========================================
-    console.log('\n=== Test 10: URL ?id= Parameter ===');
-    
-    // Open left sidebar if collapsed
+    console.log('\n=== Test 12: URL ?id= Parameter ===');
+
     let lsCollapsed10 = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
     if (lsCollapsed10) {
         await page.click('#leftSidebarFloatToggle');
         await page.waitForTimeout(300);
     }
-    
-    // Create another map to test with
+
     await page.click('#newMapBtn');
     await page.waitForTimeout(500);
     let newMapId = await page.evaluate(() => window.getCurrentMapId());
-    
-    // Navigate directly with ?id= of the first map
+
     await page.goto('http://localhost:8080/index.html?id=' + savedCurrentId);
     await page.waitForTimeout(1500);
-    
+
     let loadedId = await page.evaluate(() => window.getCurrentMapId());
     assert(loadedId === savedCurrentId, 'Loads specific map from ?id= param');
 
     // ========================================
-    // Test 11: Sort by updatedAt desc
+    // Test 13: Sort toggle – default is manual (none)
     // ========================================
-    console.log('\n=== Test 11: Sort Order ===');
-    
-    // Open left sidebar if collapsed
-    let lsCollapsed11 = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
-    if (lsCollapsed11) {
+    console.log('\n=== Test 13: Sort Toggle ===');
+
+    let lsCollapsed13 = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
+    if (lsCollapsed13) {
         await page.click('#leftSidebarFloatToggle');
         await page.waitForTimeout(300);
     }
-    
+
+    // Sort toggle should exist
+    let sortToggle = page.locator('#sortToggleInput');
+    assert(await sortToggle.count() === 1, 'Sort toggle exists');
+
+    // Default sort mode should be 'none'
+    let sortMode = await page.evaluate(() => window.getSortMode());
+    assert(sortMode === 'none', 'Default sort mode is "none" (manual)');
+
+    // Sort toggle should be OFF by default
+    let sortChecked = await page.evaluate(() => document.getElementById('sortToggleInput').checked);
+    assert(!sortChecked, 'Sort toggle is OFF by default');
+
+    // Turn on sort via JavaScript (checkbox is hidden behind iOS toggle)
+    await page.evaluate(() => {
+        var input = document.getElementById('sortToggleInput');
+        input.checked = true;
+        input.dispatchEvent(new Event('change'));
+    });
+    await page.waitForTimeout(300);
+
+    sortMode = await page.evaluate(() => window.getSortMode());
+    assert(sortMode === 'alpha', 'Sort mode changed to "alpha"');
+
+    // Verify sort is persisted in localStorage
+    let storedSortMode = await page.evaluate(() => localStorage.getItem('mindmap-sort-mode'));
+    assert(storedSortMode === 'alpha', 'Sort mode persisted in localStorage');
+
+    // Turn off sort
+    await page.evaluate(() => {
+        var input = document.getElementById('sortToggleInput');
+        input.checked = false;
+        input.dispatchEvent(new Event('change'));
+    });
+    await page.waitForTimeout(300);
+
+    sortMode = await page.evaluate(() => window.getSortMode());
+    assert(sortMode === 'none', 'Sort mode reverted to "none"');
+
+    // ========================================
+    // Test 14: Child map creation (子マップを追加)
+    // ========================================
+    console.log('\n=== Test 14: Child Map Creation ===');
+
+    // We should have 2 top-level maps now. Create a child map.
+    let topLevelItems = await page.locator('.map-item:not(.child-item)').count();
+    assert(topLevelItems >= 1, 'At least 1 top-level map exists');
+
+    // Open context menu on first top-level item
+    menuBtn = page.locator('.map-item:not(.child-item) .map-item-menu-btn').first();
+    await menuBtn.click();
+    await page.waitForTimeout(300);
+
+    // "子マップを追加" should be visible
+    let addChildBtn = page.locator('[data-action="add-child-map"]');
+    let addChildVisible = await addChildBtn.isVisible();
+    assert(addChildVisible, '子マップを追加 menu item is visible');
+
+    await addChildBtn.click();
+    await page.waitForTimeout(800);
+
+    // A child item should now exist
+    let childItems = await page.locator('.map-item.child-item').count();
+    assert(childItems >= 1, 'Child map created (child-item class present)');
+
+    // Child should have 📌 (if active) or empty icon (no 📁/📄 icons)
+    let childIcon = await page.locator('.map-item.child-item .map-item-icon').first().textContent();
+    assert(childIcon === '📌' || childIcon === '', 'Child map has pin or no icon (no file/folder icons)');
+
+    // The child's parentId should match the parent map ID
     meta = await page.evaluate(() => {
         try { return JSON.parse(localStorage.getItem('mindmap-meta')); } catch(e) { return null; }
     });
-    
-    let mapIds = await page.evaluate(() => {
-        var ids = [];
-        document.querySelectorAll('.map-item').forEach(el => ids.push(parseInt(el.dataset.mapId)));
-        return ids;
-    });
-    
-    // Sort meta by updatedAt desc
-    meta.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
-    let expectedIds = meta.map(m => m.id);
-    
-    let sortCorrect = JSON.stringify(mapIds) === JSON.stringify(expectedIds);
-    assert(sortCorrect, 'Map list sorted by updatedAt desc');
+    let childMeta = meta.find(m => m.parentId !== null);
+    assert(childMeta !== undefined, 'Child map has parentId set');
 
     // ========================================
-    // Test 12: Node operations still work
+    // Test 15: Collapse/Expand parent
     // ========================================
-    console.log('\n=== Test 12: Node Operations Still Work ===');
-    
-    await page.keyboard.press('Escape');
+    console.log('\n=== Test 15: Collapse/Expand ===');
+
+    // Parent should have expand/collapse toggle (▼ when expanded)
+    let parentToggle = page.locator('.map-item:not(.child-item) .map-item-toggle').first();
+    let toggleCount = await parentToggle.count();
+    // Only parents with children have visible toggle
+    let parentWithChildrenToggle = await page.evaluate(() => {
+        var toggles = document.querySelectorAll('.map-item:not(.child-item) .map-item-toggle');
+        for (var i = 0; i < toggles.length; i++) {
+            if (toggles[i].style.visibility !== 'hidden') return toggles[i].textContent;
+        }
+        return null;
+    });
+    assert(parentWithChildrenToggle === '▼', 'Parent with children shows ▼ (expanded)');
+
+    // Click toggle to collapse
+    let visibleToggle = await page.evaluate(() => {
+        var toggles = document.querySelectorAll('.map-item:not(.child-item) .map-item-toggle');
+        for (var i = 0; i < toggles.length; i++) {
+            if (toggles[i].style.visibility !== 'hidden') { toggles[i].click(); return true; }
+        }
+        return false;
+    });
+    await page.waitForTimeout(300);
+
+    // After collapse, child items should be hidden
+    childItems = await page.locator('.map-item.child-item').count();
+    assert(childItems === 0, 'Children hidden after collapse');
+
+    // Toggle text should now be ►
+    let collapsedToggleText = await page.evaluate(() => {
+        var toggles = document.querySelectorAll('.map-item:not(.child-item) .map-item-toggle');
+        for (var i = 0; i < toggles.length; i++) {
+            if (toggles[i].style.visibility !== 'hidden') return toggles[i].textContent;
+        }
+        return null;
+    });
+    assert(collapsedToggleText === '►', 'Collapsed parent shows ►');
+
+    // Collapse state should be persisted
+    let collapseState = await page.evaluate(() => {
+        try { return JSON.parse(localStorage.getItem('mindmap-collapse-state')); } catch(e) { return null; }
+    });
+    assert(collapseState !== null, 'Collapse state saved in localStorage');
+
+    // Click toggle to expand again
+    await page.evaluate(() => {
+        var toggles = document.querySelectorAll('.map-item:not(.child-item) .map-item-toggle');
+        for (var i = 0; i < toggles.length; i++) {
+            if (toggles[i].style.visibility !== 'hidden') { toggles[i].click(); return; }
+        }
+    });
+    await page.waitForTimeout(300);
+
+    childItems = await page.locator('.map-item.child-item').count();
+    assert(childItems >= 1, 'Children visible after expand');
+
+    // ========================================
+    // Test 16: Migration v4 flag
+    // ========================================
+    console.log('\n=== Test 16: Migration v4 ===');
+
+    let migratedV4 = await page.evaluate(() => localStorage.getItem('mindmap-migrated-v4'));
+    assert(migratedV4 === '1', 'mindmap-migrated-v4 flag is set');
+
+    // All meta entries should have parentId and order
+    meta = await page.evaluate(() => {
+        try { return JSON.parse(localStorage.getItem('mindmap-meta')); } catch(e) { return null; }
+    });
+    let allHaveFields = meta.every(m => m.parentId !== undefined && m.order !== undefined);
+    assert(allHaveFields, 'All meta entries have parentId and order fields');
+
+    // ========================================
+    // Test 17: Backspace doesn't trigger during rename
+    // ========================================
+    console.log('\n=== Test 17: Backspace During Rename ===');
+
+    // Start renaming
+    nameEl = page.locator('.map-item-name').first();
+    await nameEl.dblclick();
+    await page.waitForTimeout(300);
+
+    renameInput = page.locator('.map-item-rename-input').first();
+    await renameInput.fill('TestBackspace');
     await page.waitForTimeout(100);
+
+    // Press Backspace – should NOT delete a mind map node
+    let nodeCountBefore = await page.evaluate(() => window.getMindMapData().root.children.length);
+    await page.keyboard.press('Backspace');
+    await page.waitForTimeout(200);
+    let nodeCountAfter = await page.evaluate(() => window.getMindMapData().root.children.length);
+    assert(nodeCountBefore === nodeCountAfter, 'Backspace in rename does NOT delete mind map nodes');
+
+    // Finish rename
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(500);
+
+    // ========================================
+    // Test 18: Node operations still work
+    // ========================================
+    console.log('\n=== Test 18: Node Operations Still Work ===');
+
+    // Click on canvas to ensure focus is on the mind map, not the sidebar
+    await page.click('#canvas');
+    await page.waitForTimeout(300);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+
+    // Select root node first
+    await page.evaluate(() => {
+        // Find and click the root node
+        var rootEl = document.querySelector('[data-id="root"]');
+        if (rootEl) rootEl.click();
+    });
+    await page.waitForTimeout(300);
+    await page.keyboard.press('Escape'); // Exit editing mode
+    await page.waitForTimeout(200);
+
     await page.keyboard.press('Tab');
     await page.waitForTimeout(300);
     await page.keyboard.type('ChildNode');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(300);
-    
+
     let data = await page.evaluate(() => window.getMindMapData());
     assert(data.root.children.length >= 1, 'Can add child nodes');
-    
-    // Test copy still works
+
     let copyText = await page.evaluate(() => window.getCurrentCopyText());
     assert(copyText.includes('中心テーマ'), 'Copy text includes root text');
     assert(copyText.includes('ChildNode'), 'Copy text includes child node');
 
     // ========================================
-    // Test 13: Keyboard shortcuts still work
+    // Test 19: Keyboard shortcuts still work
     // ========================================
-    console.log('\n=== Test 13: Keyboard Shortcuts ===');
-    
+    console.log('\n=== Test 19: Keyboard Shortcuts ===');
+
     await page.keyboard.press('Escape');
     await page.waitForTimeout(100);
-    
-    // ArrowRight to navigate to child
+
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(200);
-    
+
     let selectedIds = await page.evaluate(() => {
         var ids = [];
         window.getSelectedNodeIds().forEach(id => ids.push(id));
@@ -363,7 +556,6 @@ function assert(cond, msg) {
     });
     assert(selectedIds.length === 1, 'Navigation with ArrowRight works');
 
-    // ArrowLeft to navigate back to parent
     await page.keyboard.press('ArrowLeft');
     await page.waitForTimeout(200);
     selectedIds = await page.evaluate(() => {
@@ -374,78 +566,139 @@ function assert(cond, msg) {
     assert(selectedIds.includes('root'), 'Navigation with ArrowLeft works back to root');
 
     // ========================================
-    // Test 14: Right sidebar still works
+    // Test 20: Right sidebar still works
     // ========================================
-    console.log('\n=== Test 14: Right Sidebar ===');
-    
-    // Open right sidebar via floating 🐣 button
+    console.log('\n=== Test 20: Right Sidebar ===');
+
     let rightFloatToggle = page.locator('#sidebarFloatToggle');
     await rightFloatToggle.click();
     await page.waitForTimeout(300);
-    
+
     let rightSidebar = page.locator('#sidebar');
     let rightCollapsed = await rightSidebar.evaluate(el => el.classList.contains('collapsed'));
     assert(!rightCollapsed, 'Right sidebar can be opened');
-    
+
     let previewLines = await page.locator('.sidebar-preview-line').count();
     assert(previewLines >= 2, 'Right sidebar shows preview lines');
 
     // ========================================
-    // Test 15: Auto-save when switching maps
+    // Test 21: Auto-save when switching maps
     // ========================================
-    console.log('\n=== Test 15: Auto-save on Switch ===');
-    
-    // Add a unique node to current map using JavaScript API directly
-    // (keyboard interactions can be unreliable after many UI operations)
+    console.log('\n=== Test 21: Auto-save on Switch ===');
+
     await page.evaluate(() => {
-        // Select root node if not already selected
         var root = window.getMindMapData().root;
-        // Use the exposed addChildNode function through the API
-        // We'll manipulate data directly to ensure the test is reliable
         root.children.push({ id: 'test_autosave_' + Date.now(), text: 'UniqueAutoSaveTest', children: [] });
-        // Trigger save
-        document.getElementById('canvasInner').dispatchEvent(new Event('render'));
-    });
-    // Force a render to save
-    await page.evaluate(() => {
-        // The render function is inside the IIFE so we need to trigger it indirectly
-        // Simplest way: just save to localStorage directly
         var mapId = window.getCurrentMapId();
         var data = window.getMindMapData();
         localStorage.setItem('mindmap-data-' + mapId, JSON.stringify(data));
     });
     await page.waitForTimeout(500);
-    
+
     let beforeSwitchId = await page.evaluate(() => window.getCurrentMapId());
-    
-    // Create and switch to new map
-    // First open left sidebar if it closed
+
     let leftCollapsed = await page.locator('#leftSidebar').evaluate(el => el.classList.contains('collapsed'));
     if (leftCollapsed) {
         await page.click('#leftSidebarFloatToggle');
         await page.waitForTimeout(300);
     }
-    
+
     await page.click('#newMapBtn');
     await page.waitForTimeout(500);
-    
-    // Switch back to original
+
     let origMapItem = page.locator(`.map-item[data-map-id="${beforeSwitchId}"]`);
     await origMapItem.click();
     await page.waitForTimeout(500);
-    
-    // Check that UniqueAutoSaveTest is still there
+
     data = await page.evaluate(() => window.getMindMapData());
     let hasUniqueNode = JSON.stringify(data).includes('UniqueAutoSaveTest');
     assert(hasUniqueNode, 'Data auto-saved when switching maps');
 
     // ========================================
-    // Test 16: Left sidebar toggle persists width
+    // Test 22: Left sidebar toggle persists width
     // ========================================
-    console.log('\n=== Test 16: Left Sidebar Width Persistence ===');
-    
+    console.log('\n=== Test 22: Left Sidebar Width Persistence ===');
+
     let savedWidth = await page.evaluate(() => localStorage.getItem('mindmap_left_sidebar_width'));
     assert(savedWidth !== null, 'Left sidebar width saved in localStorage');
+
+    // ========================================
+    // Test 23: Child map indentation
+    // ========================================
+    console.log('\n=== Test 23: Child Map Indentation ===');
+
+    let childItemPadding = await page.evaluate(() => {
+        var child = document.querySelector('.map-item.child-item');
+        if (!child) return null;
+        return window.getComputedStyle(child).paddingLeft;
+    });
+    assert(childItemPadding === '28px', 'Child items have 28px left padding for indentation');
+
+    // ========================================
+    // Test 24: 子マップを追加 hidden for child items
+    // ========================================
+    console.log('\n=== Test 24: 子マップを追加 Hidden for Children ===');
+
+    // Open context menu on a child item
+    let childMenuBtn = page.locator('.map-item.child-item .map-item-menu-btn').first();
+    let childMenuCount = await childMenuBtn.count();
+    if (childMenuCount > 0) {
+        await childMenuBtn.click();
+        await page.waitForTimeout(300);
+        let addChildDisplay = await page.evaluate(() => {
+            var item = document.querySelector('[data-action="add-child-map"]');
+            return item ? window.getComputedStyle(item).display : 'none';
+        });
+        assert(addChildDisplay === 'none', '子マップを追加 hidden for child items in context menu');
+        // Close menu
+        await page.click('body');
+        await page.waitForTimeout(200);
+    } else {
+        assert(true, 'No child items with menu to test (skipped)');
+    }
+
+    // ========================================
+    // Test 25: Alphabetical sort order
+    // ========================================
+    console.log('\n=== Test 25: Alphabetical Sort Order ===');
+
+    // Rename maps to test sorting
+    await page.evaluate(() => {
+        var meta = JSON.parse(localStorage.getItem('mindmap-meta'));
+        var topLevel = meta.filter(m => m.parentId === null);
+        if (topLevel.length >= 2) {
+            topLevel[0].name = 'Zebra Map';
+            topLevel[1].name = 'Apple Map';
+        }
+        localStorage.setItem('mindmap-meta', JSON.stringify(meta));
+        window.renderMapList();
+    });
+    await page.waitForTimeout(300);
+
+    // Turn on alphabetical sort
+    await page.evaluate(() => {
+        document.getElementById('sortToggleInput').checked = true;
+        document.getElementById('sortToggleInput').dispatchEvent(new Event('change'));
+    });
+    await page.waitForTimeout(300);
+
+    let sortedNames = await page.evaluate(() => {
+        var names = [];
+        document.querySelectorAll('.map-item:not(.child-item) .map-item-name').forEach(el => names.push(el.textContent));
+        return names;
+    });
+    if (sortedNames.length >= 2) {
+        assert(sortedNames[0].localeCompare(sortedNames[1]) <= 0, 'Maps sorted alphabetically when sort toggle is ON');
+    } else {
+        assert(true, 'Not enough maps to verify sort (skipped)');
+    }
+
+    // Turn off sort
+    await page.evaluate(() => {
+        document.getElementById('sortToggleInput').checked = false;
+        document.getElementById('sortToggleInput').dispatchEvent(new Event('change'));
+    });
+    await page.waitForTimeout(300);
 
     // ========================================
     // Summary
