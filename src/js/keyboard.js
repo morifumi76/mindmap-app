@@ -19,6 +19,7 @@ function applyGrayoutToSelection() {
     });
     setNodeGrayoutState(grayState);
     setNodeHighlightState(hlState);
+    render();
     saveState();
     showToast(allOn ? 'グレーアウトを解除しました' : 'グレーアウトしました');
 }
@@ -40,6 +41,7 @@ function applyHighlightToSelection() {
     });
     setNodeHighlightState(hlState);
     setNodeGrayoutState(grayState);
+    render();
     saveState();
     showToast(allOn ? 'ハイライトを解除しました' : 'ハイライトしました');
 }
