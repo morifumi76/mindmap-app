@@ -94,6 +94,8 @@ function initLeftSidebar() {
             duplicateMap(targetId);
         } else if (action === 'delete') {
             deleteMap(targetId);
+        } else if (action === 'share') {
+            if (typeof window.showShareDialog === 'function') window.showShareDialog(targetId);
         }
     });
 
@@ -586,6 +588,9 @@ function showContextMenu(mapId, anchorEl) {
     hideAllContextMenus();
     ctxMenuTargetMapId = mapId;
     var cm = document.getElementById('ctxMenu');
+    // Show share item only if logged in (Supabase available)
+    var shareItem = cm.querySelector('[data-action="share"]');
+    if (shareItem) shareItem.style.display = window._supa ? '' : 'none';
     var rect = anchorEl.getBoundingClientRect();
     cm.style.top = rect.bottom + 4 + 'px';
     cm.style.left = rect.left + 'px';
@@ -676,6 +681,10 @@ function createNewMap() {
 
     switchToMap(newId);
     showToast('新しいマップを作成しました');
+    // Supabase: create map (will be synced on first save via saveToLocalStorage)
+    if (window._supa) {
+        window._supa.saveMap(newId, '無題のマップ', defaultData, targetFolderId).catch(function(){});
+    }
 }
 
 function createPageInFolder(folderId) {
@@ -708,6 +717,9 @@ function createPageInFolder(folderId) {
     switchToMap(newId);
     showToast('新しいマップを作成しました');
     setTimeout(function() { startInlineRename(newId); }, 200);
+    if (window._supa) {
+        window._supa.saveMap(newId, '無題のマップ', defaultData, folderId).catch(function(){});
+    }
 }
 
 // ---- CRUD: Folders ----
@@ -730,6 +742,9 @@ function createFolder() {
     renderMapList();
     showToast('フォルダを作成しました');
     setTimeout(function() { startInlineRename(newId); }, 200);
+    if (window._supa) {
+        window._supa.saveFolder(newId, '新しいフォルダ', maxOrder).catch(function(){});
+    }
 }
 
 function deleteFolder(folderId) {
@@ -757,6 +772,9 @@ function deleteFolder(folderId) {
     saveMetaList(newMeta);
     renderMapList();
     showToast('🗑 フォルダを削除しました');
+    if (window._supa) {
+        window._supa.deleteFolder(folderId).catch(function(){});
+    }
 }
 
 function switchToMap(mapId) {
@@ -848,6 +866,9 @@ function deleteMap(mapId) {
 
     saveMetaList(newMeta);
     try { localStorage.removeItem(getMapDataKey(mapId)); } catch(e) {}
+    if (window._supa) {
+        window._supa.deleteMap(mapId).catch(function(){});
+    }
 
     if (mapId === currentMapId) {
         // Switch to first available page
@@ -896,15 +917,30 @@ function startInlineRename(mapId) {
 
         if (save) {
             var metaList = getMetaList();
+            var savedMeta = null;
             for (var i = 0; i < metaList.length; i++) {
                 if (metaList[i].id === mapId) {
                     metaList[i].name = newName;
                     metaList[i].updatedAt = nowISO();
+                    savedMeta = metaList[i];
                     break;
                 }
             }
             saveMetaList(metaList);
             if (mapId === currentMapId) updatePageTitle();
+            // Supabase sync for rename
+            if (window._supa && savedMeta) {
+                if (savedMeta.type === 'folder') {
+                    window._supa.saveFolder(mapId, newName, savedMeta.order || 0).catch(function(){});
+                } else {
+                    // For page rename, use saveMap with current data
+                    var pageData;
+                    try { pageData = JSON.parse(localStorage.getItem('mindmap-data-' + mapId)); } catch(e2) { pageData = null; }
+                    if (pageData) {
+                        window._supa.saveMap(mapId, newName, pageData, savedMeta.folderId).catch(function(){});
+                    }
+                }
+            }
         }
         renderMapList();
     }

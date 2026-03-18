@@ -1,0 +1,418 @@
+/* ========================================
+   Auth: Login Screen
+   ======================================== */
+
+#authOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #f7f7f5;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+#authOverlay.show {
+    display: flex;
+}
+
+.auth-card {
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 40px 36px;
+    width: 340px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.auth-title {
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #37352f;
+    margin: 0 0 28px 0;
+    text-align: center;
+}
+
+.auth-field {
+    margin-bottom: 16px;
+}
+
+.auth-field label {
+    display: block;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 12px;
+    color: #6b6b6b;
+    margin-bottom: 6px;
+}
+
+.auth-field input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 14px;
+    color: #37352f;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    outline: none;
+    background: #fafafa;
+    transition: border-color 0.15s;
+}
+
+.auth-field input:focus {
+    border-color: #37352f;
+    background: #ffffff;
+}
+
+.auth-error {
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 12px;
+    color: #e03e3e;
+    min-height: 18px;
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.auth-btn {
+    display: block;
+    width: 100%;
+    padding: 9px 0;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    background: #37352f;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.auth-btn:hover {
+    background: #555248;
+}
+
+.auth-btn:disabled {
+    background: #b0aca6;
+    cursor: not-allowed;
+}
+
+/* ========================================
+   Save Indicator
+   ======================================== */
+
+#saveIndicator {
+    position: fixed;
+    bottom: 16px;
+    right: 20px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 12px;
+    color: #6b6b6b;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    padding: 4px 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+#saveIndicator.show {
+    opacity: 1;
+}
+
+/* ========================================
+   Migration Dialog
+   ======================================== */
+
+#migrationOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 9998;
+    align-items: center;
+    justify-content: center;
+}
+
+#migrationOverlay.show {
+    display: flex;
+}
+
+.migration-card {
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 32px 28px;
+    width: 360px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+}
+
+.migration-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #37352f;
+    margin: 0 0 12px 0;
+}
+
+.migration-body {
+    font-size: 13px;
+    color: #37352f;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.migration-body .migration-count {
+    color: #6b6b6b;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+.migration-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.migration-btn-primary {
+    padding: 7px 18px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    background: #37352f;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.migration-btn-primary:hover {
+    background: #555248;
+}
+
+.migration-btn-secondary {
+    padding: 7px 18px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    color: #37352f;
+    background: #ffffff;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.migration-btn-secondary:hover {
+    background: #f7f7f5;
+}
+
+/* ========================================
+   Share Dialog
+   ======================================== */
+
+#shareOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 9998;
+    align-items: center;
+    justify-content: center;
+}
+
+#shareOverlay.show {
+    display: flex;
+}
+
+.share-card {
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 28px 24px;
+    width: 380px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+}
+
+.share-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.share-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #37352f;
+    margin: 0;
+}
+
+.share-card-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: #6b6b6b;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.share-card-close:hover {
+    background: #f7f7f5;
+    color: #37352f;
+}
+
+.share-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.share-toggle-label {
+    font-size: 13px;
+    color: #37352f;
+}
+
+/* iOS-style toggle — same design as existing toggles */
+.share-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.share-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.share-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #d4d4d4;
+    border-radius: 20px;
+    transition: background 0.2s;
+}
+
+.share-toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    top: 3px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.share-toggle-switch input:checked + .share-toggle-slider {
+    background: #37352f;
+}
+
+.share-toggle-switch input:checked + .share-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.share-url-box {
+    display: none;
+    margin-top: 4px;
+}
+
+.share-url-box.show {
+    display: block;
+}
+
+.share-url-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: #37352f;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    background: #fafafa;
+    outline: none;
+    margin-bottom: 8px;
+    font-family: monospace;
+    word-break: break-all;
+}
+
+.share-copy-btn {
+    padding: 6px 16px;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    color: #ffffff;
+    background: #37352f;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.share-copy-btn:hover {
+    background: #555248;
+}
+
+/* ========================================
+   Read-only mode banner
+   ======================================== */
+
+#readonlyBanner {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #37352f;
+    color: #ffffff;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    text-align: center;
+    padding: 6px 0;
+    z-index: 2000;
+}
+
+#readonlyBanner.show {
+    display: block;
+}
+
+/* ========================================
+   Logout button (left sidebar footer)
+   ======================================== */
+
+.left-sidebar-footer {
+    padding: 10px 12px;
+    border-top: 1px solid #e8e8e8;
+}
+
+.logout-btn {
+    display: block;
+    width: 100%;
+    padding: 7px 0;
+    font-family: 'Meiryo UI', Meiryo, sans-serif;
+    font-size: 13px;
+    color: #6b6b6b;
+    background: none;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.logout-btn:hover {
+    background: #f7f7f5;
+    color: #37352f;
+}

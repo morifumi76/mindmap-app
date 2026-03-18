@@ -40,6 +40,9 @@
                 <div class="left-sidebar-separator"></div>
             </div>
             <div class="left-sidebar-list" id="mapList"></div>
+            <div class="left-sidebar-footer" id="leftSidebarFooter" style="display:none">
+                <button class="logout-btn" id="logoutBtn">ログアウト</button>
+            </div>
         </div>
         <div class="left-sidebar-resize-handle" id="leftSidebarResizeHandle"></div>
     </div>
@@ -48,6 +51,7 @@
     <div class="ctx-menu" id="ctxMenu">
         <div class="ctx-menu-item" data-action="rename">✏️ 名前変更</div>
         <div class="ctx-menu-item" data-action="duplicate">📑 複製</div>
+        <div class="ctx-menu-item" data-action="share" style="display:none">🔗 共有</div>
         <div class="ctx-menu-item danger" data-action="delete">🗑 削除</div>
     </div>
 
@@ -134,6 +138,72 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- Save Indicator -->
+    <div id="saveIndicator"></div>
+
+    <!-- Read-only banner -->
+    <div id="readonlyBanner">閲覧専用モード — このマップは編集できません</div>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:#f7f7f5;z-index:9999;align-items:center;justify-content:center;font-family:Meiryo UI,Meiryo,sans-serif;color:#6b6b6b;font-size:14px;">
+        データを読み込んでいます...
+    </div>
+    <style>#loadingOverlay.show{display:flex!important}</style>
+
+    <!-- Login Overlay -->
+    <div id="authOverlay">
+        <div class="auth-card">
+            <h1 class="auth-title">マインドマップ</h1>
+            <form id="loginForm">
+                <div class="auth-field">
+                    <label for="loginEmail">メールアドレス</label>
+                    <input type="email" id="loginEmail" autocomplete="username" required>
+                </div>
+                <div class="auth-field">
+                    <label for="loginPassword">パスワード</label>
+                    <input type="password" id="loginPassword" autocomplete="current-password" required>
+                </div>
+                <div class="auth-error" id="loginError"></div>
+                <button type="submit" class="auth-btn" id="loginBtn">ログイン</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Migration Dialog -->
+    <div id="migrationOverlay">
+        <div class="migration-card">
+            <h2 class="migration-title">📦 データの移行</h2>
+            <div class="migration-body">
+                ブラウザに保存されているマインドマップデータが見つかりました。クラウドに移行しますか？
+                <div class="migration-count" id="migrationCount"></div>
+            </div>
+            <div class="migration-btns">
+                <button class="migration-btn-secondary" id="migrationBtnLater">あとで</button>
+                <button class="migration-btn-primary" id="migrationBtnDo">移行する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Dialog -->
+    <div id="shareOverlay">
+        <div class="share-card">
+            <div class="share-card-header">
+                <h2 class="share-card-title">🔗 共有</h2>
+                <button class="share-card-close" id="shareCloseBtn">✕</button>
+            </div>
+            <div class="share-toggle-row">
+                <span class="share-toggle-label">このマップを共有する</span>
+                <label class="share-toggle-switch">
+                    <input type="checkbox" id="shareToggleInput">
+                    <span class="share-toggle-slider"></span>
+                </label>
+            </div>
+            <div class="share-url-box" id="shareUrlBox">
+                <input type="text" class="share-url-input" id="shareUrlInput" readonly>
+                <button class="share-copy-btn" id="shareUrlCopyBtn">URLをコピー</button>
+            </div>
+        </div>
+    </div>
 
     <!-- BUILD:js -->
     <script src="js/state.js"></script>

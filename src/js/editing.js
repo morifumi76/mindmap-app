@@ -3,6 +3,7 @@
 // ========================================
 
 function startEditing(nodeId) {
+    if (window._isReadOnly) return;
     if (editingNodeId === nodeId) return;
     if (editingNodeId) finishEditing();
     editingNodeId = nodeId;

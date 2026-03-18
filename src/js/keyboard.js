@@ -3,6 +3,16 @@
 // ========================================
 
 function handleKeyDown(e) {
+    // Read-only mode: only allow zoom/pan shortcuts, block all editing
+    if (window._isReadOnly) {
+        var isMacRO = /Mac/.test(navigator.platform);
+        var cmdKeyRO = isMacRO ? e.metaKey : e.ctrlKey;
+        // Allow Cmd+/Ctrl+= (zoom in), Cmd+- (zoom out), Cmd+0 (reset)
+        if (cmdKeyRO && (e.key === '=' || e.key === '+' || e.key === '-' || e.key === '0')) return;
+        e.preventDefault();
+        return;
+    }
+
     var isMac = /Mac/.test(navigator.platform);
     var cmdKey = isMac ? e.metaKey : e.ctrlKey;
 

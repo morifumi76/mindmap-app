@@ -325,6 +325,10 @@ function saveToLocalStorage() {
         }
     }
     saveMetaList(metaList);
+    // Supabase debounced sync
+    if (typeof window._supaQueueSync === 'function' && !window._isReadOnly) {
+        window._supaQueueSync(currentMapId);
+    }
 }
 
 function loadMapData(mapId) {

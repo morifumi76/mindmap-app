@@ -203,5 +203,5 @@ function updatePageTitle() {
     document.title = meta ? meta.name + ' - マインドマップ' : 'マインドマップ';
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// DOMContentLoaded is handled by app-init.js (which calls init() after auth check)
 
