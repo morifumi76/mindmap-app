@@ -198,6 +198,10 @@
     min-width: 0;
 }
 
+.map-item-name--shared {
+    color: #1a73e8;
+}
+
 .map-item-name[contenteditable="true"] {
     background: #fff;
     border: 1px solid var(--primary-color);

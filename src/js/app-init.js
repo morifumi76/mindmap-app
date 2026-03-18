@@ -209,7 +209,7 @@
 
         if (toggleInput) {
             toggleInput.addEventListener('change', function() {
-                var mapId = window.currentMapId;
+                var mapId = currentMapId;
                 if (!mapId) return;
                 if (toggleInput.checked) {
                     // Save first to ensure map is in Supabase
@@ -280,6 +280,8 @@
             }
             localStorage.setItem('mindmap-meta', JSON.stringify(metaList));
         } catch(e) {}
+        // サイドバーのマップ名カラーを即時反映
+        if (typeof renderMapList === 'function') renderMapList();
     }
 
     // Called from sidebar-left.js share action

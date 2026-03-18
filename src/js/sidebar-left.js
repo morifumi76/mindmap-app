@@ -412,7 +412,7 @@ function createPageElement(page, isActive, isDndEnabled, parentFolder) {
     }
 
     var name = document.createElement('span');
-    name.className = 'map-item-name';
+    name.className = 'map-item-name' + (page.isPublic ? ' map-item-name--shared' : '');
     name.title = page.name;
     // Name text + inline pin with half-width space
     name.textContent = page.name;

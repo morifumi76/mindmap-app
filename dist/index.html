@@ -423,6 +423,10 @@ html, body {
     min-width: 0;
 }
 
+.map-item-name--shared {
+    color: #1a73e8;
+}
+
 .map-item-name[contenteditable="true"] {
     background: #fff;
     border: 1px solid var(--primary-color);
@@ -18265,7 +18269,7 @@ function createPageElement(page, isActive, isDndEnabled, parentFolder) {
     }
 
     var name = document.createElement('span');
-    name.className = 'map-item-name';
+    name.className = 'map-item-name' + (page.isPublic ? ' map-item-name--shared' : '');
     name.title = page.name;
     // Name text + inline pin with half-width space
     name.textContent = page.name;
@@ -19066,7 +19070,7 @@ window.toggleNodeHighlight = toggleNodeHighlight;
 
         if (toggleInput) {
             toggleInput.addEventListener('change', function() {
-                var mapId = window.currentMapId;
+                var mapId = currentMapId;
                 if (!mapId) return;
                 if (toggleInput.checked) {
                     // Save first to ensure map is in Supabase
@@ -19137,6 +19141,8 @@ window.toggleNodeHighlight = toggleNodeHighlight;
             }
             localStorage.setItem('mindmap-meta', JSON.stringify(metaList));
         } catch(e) {}
+        // サイドバーのマップ名カラーを即時反映
+        if (typeof renderMapList === 'function') renderMapList();
     }
 
     // Called from sidebar-left.js share action
