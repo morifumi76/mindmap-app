@@ -183,6 +183,8 @@
     }
 
     // ---- Share dialog ----
+    var shareDialogTargetId = null; // showShareDialog で開いたマップのID
+
     function initShareDialog() {
         var overlay     = document.getElementById('shareOverlay');
         var closeBtn    = document.getElementById('shareCloseBtn');
@@ -209,7 +211,7 @@
 
         if (toggleInput) {
             toggleInput.addEventListener('change', function() {
-                var mapId = currentMapId;
+                var mapId = shareDialogTargetId; // 開いたダイアログの対象マップIDを使用
                 if (!mapId) return;
                 if (toggleInput.checked) {
                     // Save first to ensure map is in Supabase
@@ -292,6 +294,7 @@
         var urlBox      = document.getElementById('shareUrlBox');
         var urlInput    = document.getElementById('shareUrlInput');
         if (!overlay) return;
+        shareDialogTargetId = localId; // トグルハンドラが参照するIDをセット
         // Reset
         if (toggleInput) toggleInput.checked = false;
         if (urlBox) urlBox.classList.remove('show');
