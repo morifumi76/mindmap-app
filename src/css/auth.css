@@ -399,6 +399,15 @@ body.readonly-mode .sidebar {
     height: calc(100% - 32px);
 }
 
+/* 閲覧専用モード時：編集用のドットボタンは非表示、🌲ボタンをバナー分下へ */
+body.readonly-mode .canvas-float-btns {
+    display: none;
+}
+
+body.readonly-mode .sidebar-float-toggle {
+    top: 44px;
+}
+
 /* ========================================
    Logout button (left sidebar footer)
    ======================================== */
