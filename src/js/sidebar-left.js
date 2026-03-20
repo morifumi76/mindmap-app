@@ -115,6 +115,8 @@ function initLeftSidebar() {
             startInlineRename(targetId);
         } else if (action === 'folder-add-page') {
             createPageInFolder(targetId);
+        } else if (action === 'folder-add-subfolder') {
+            createSubFolder(targetId);
         } else if (action === 'folder-delete') {
             deleteFolder(targetId);
         }
@@ -195,7 +197,7 @@ function closeLeftSidebar() {
     adjustCanvasForSidebars();
 }
 
-// ---- Render Map List (Folder → Page Tree) ----
+// ---- Render Map List (recursive Folder → SubFolder/Page Tree) ----
 function renderMapList() {
     var list = document.getElementById('mapList');
     if (!list) return;
@@ -205,68 +207,88 @@ function renderMapList() {
     var sortMode = getSortMode();
     var collapseState = getCollapseState();
 
-    // Separate folders and pages
     var folders = metaList.filter(function(m) { return m.type === 'folder'; });
     var pages = metaList.filter(function(m) { return m.type === 'page'; });
 
-    // Build page map: folderId -> [pages]
-    var pageMap = {};
+    // Build maps for quick lookup
+    var pagesByFolder = {};   // folderId -> [pages]
+    var subFoldersByParent = {}; // parentFolderId -> [folders]
+    var defFolderId = getDefaultFolderId(metaList);
+
     for (var i = 0; i < pages.length; i++) {
-        var fid = pages[i].folderId || getDefaultFolderId(metaList);
-        if (!pageMap[fid]) pageMap[fid] = [];
-        pageMap[fid].push(pages[i]);
+        var fid = pages[i].folderId || defFolderId;
+        if (!pagesByFolder[fid]) pagesByFolder[fid] = [];
+        pagesByFolder[fid].push(pages[i]);
     }
 
-    // Sort folders: 未分類 always last, others by order or alpha
-    var defaultFolders = folders.filter(function(f) { return f.isDefault; });
-    var regularFolders = folders.filter(function(f) { return !f.isDefault; });
+    for (var i = 0; i < folders.length; i++) {
+        var pf = folders[i].parentFolderId || null;
+        if (!subFoldersByParent[pf]) subFoldersByParent[pf] = [];
+        subFoldersByParent[pf].push(folders[i]);
+    }
 
-    if (sortMode === 'alpha') {
-        regularFolders.sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
-        for (var fid in pageMap) {
-            pageMap[fid].sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
-        }
-    } else {
-        regularFolders.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
-        for (var fid in pageMap) {
-            pageMap[fid].sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+    // Sort helper
+    function sortItems(arr) {
+        if (sortMode === 'alpha') {
+            arr.sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+        } else {
+            arr.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
         }
     }
 
-    // Final folder order: regular folders + 未分類 at bottom
-    var orderedFolders = regularFolders.concat(defaultFolders);
+    // Sort all groups
+    for (var k in pagesByFolder) sortItems(pagesByFolder[k]);
+    for (var k in subFoldersByParent) {
+        var grp = subFoldersByParent[k];
+        var defPart = grp.filter(function(f) { return f.isDefault; });
+        var regPart = grp.filter(function(f) { return !f.isDefault; });
+        sortItems(regPart);
+        subFoldersByParent[k] = regPart.concat(defPart);
+    }
+
+    var isDndFolderEnabled = (sortMode !== 'alpha');
+    var isDndPageEnabled = true;
 
     list.innerHTML = '';
-    var isDndFolderEnabled = (sortMode !== 'alpha'); // alpha時はフォルダ並び替え不可
-    var isDndPageEnabled = true; // ページ移動は常に有効
 
-    for (var fi = 0; fi < orderedFolders.length; fi++) {
-        var folder = orderedFolders[fi];
-        var folderPages = pageMap[folder.id] || [];
-        var hasPages = folderPages.length > 0;
-        var isCollapsed = collapseState[folder.id] === true;
+    // Recursive render starting from root (parentFolderId === null)
+    function renderFolderChildren(parentId, depth) {
+        var childFolders = subFoldersByParent[parentId] || [];
+        var childPages = pagesByFolder[parentId] || [];
 
-        var folderEl = createFolderElement(folder, hasPages, isCollapsed, isDndFolderEnabled);
-        list.appendChild(folderEl);
+        for (var fi = 0; fi < childFolders.length; fi++) {
+            var folder = childFolders[fi];
+            var hasChildren = (pagesByFolder[folder.id] && pagesByFolder[folder.id].length > 0)
+                           || (subFoldersByParent[folder.id] && subFoldersByParent[folder.id].length > 0);
+            var isCollapsed = collapseState[folder.id] === true;
 
-        // Render pages if not collapsed
-        if (!isCollapsed) {
-            for (var pi = 0; pi < folderPages.length; pi++) {
-                var page = folderPages[pi];
-                var isPageActive = (page.id === currentMapId);
-                var pageEl = createPageElement(page, isPageActive, isDndPageEnabled, folder);
-                list.appendChild(pageEl);
+            var folderEl = createFolderElement(folder, hasChildren, isCollapsed, isDndFolderEnabled, depth);
+            list.appendChild(folderEl);
+
+            if (!isCollapsed) {
+                renderFolderChildren(folder.id, depth + 1);
             }
         }
+
+        for (var pi = 0; pi < childPages.length; pi++) {
+            var page = childPages[pi];
+            var isPageActive = (page.id === currentMapId);
+            var pageEl = createPageElement(page, isPageActive, isDndPageEnabled, depth);
+            list.appendChild(pageEl);
+        }
     }
+
+    renderFolderChildren(null, 0);
 }
 
-function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled) {
+function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth) {
+    depth = depth || 0;
     var item = document.createElement('div');
     item.className = 'map-item folder-item' + (folder.isDefault ? ' default-folder' : '');
     item.dataset.mapId = folder.id;
     item.dataset.itemType = 'folder';
     item.dataset.isDefault = folder.isDefault ? '1' : '';
+    item.style.paddingLeft = (12 + depth * 20) + 'px';
 
     if (isDndEnabled && !folder.isDefault) {
         item.draggable = true;
@@ -371,14 +393,17 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled) {
             var h = rect.height;
 
             if (mapDragState.draggingType === 'folder') {
-                // Folder reordering: above or below only (no nesting), but NOT on 未分類
+                // Folder: top 25% → above, bottom 25% → below, middle → into (nest)
                 if (folderMeta.isDefault) return;
-                if (relY < h * 0.5) {
+                if (relY < h * 0.25) {
                     itemEl.classList.add('drag-over-above');
                     mapDragState.dropTarget = { id: folderId, position: 'above', type: 'folder' };
-                } else {
+                } else if (relY > h * 0.75) {
                     itemEl.classList.add('drag-over-below');
                     mapDragState.dropTarget = { id: folderId, position: 'below', type: 'folder' };
+                } else {
+                    itemEl.classList.add('drag-over-into');
+                    mapDragState.dropTarget = { id: folderId, position: 'into', type: 'folder' };
                 }
             } else {
                 // Page dropped onto folder: move page into this folder
@@ -403,12 +428,14 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled) {
     return item;
 }
 
-function createPageElement(page, isActive, isDndEnabled, parentFolder) {
+function createPageElement(page, isActive, isDndEnabled, depth) {
+    depth = depth || 0;
     var item = document.createElement('div');
     item.className = 'map-item page-item' + (isActive ? ' active' : '');
     item.dataset.mapId = page.id;
     item.dataset.itemType = 'page';
     item.dataset.folderId = page.folderId || '';
+    item.style.paddingLeft = (12 + depth * 20) + 'px';
 
     if (isDndEnabled) {
         item.draggable = true;
@@ -524,6 +551,20 @@ function clearMapDragIndicators() {
     });
 }
 
+// Check if targetId is a descendant of dragId (to prevent circular nesting)
+function isFolderDescendant(metaList, ancestorId, checkId) {
+    for (var i = 0; i < metaList.length; i++) {
+        var m = metaList[i];
+        if (m.id === checkId && m.type === 'folder') {
+            var pf = m.parentFolderId || null;
+            if (pf === null) return false;
+            if (pf === ancestorId) return true;
+            return isFolderDescendant(metaList, ancestorId, pf);
+        }
+    }
+    return false;
+}
+
 function handleMapDrop(dragId, targetId, position, dragType) {
     if (dragId === targetId) return;
     var metaList = getMetaList();
@@ -535,19 +576,49 @@ function handleMapDrop(dragId, targetId, position, dragType) {
     if (!dragMeta || !targetMeta) return;
 
     if (dragType === 'folder') {
-        // Folder reordering among folders only
-        if (targetMeta.type !== 'folder' || targetMeta.isDefault) return;
-        var allFolders = metaList.filter(function(m) { return m.type === 'folder' && !m.isDefault && m.id !== dragId; });
-        allFolders.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
-        var targetIdx = -1;
-        for (var i = 0; i < allFolders.length; i++) {
-            if (allFolders[i].id === targetId) { targetIdx = i; break; }
-        }
-        if (targetIdx === -1) return;
-        if (position === 'below') targetIdx++;
-        allFolders.splice(targetIdx, 0, dragMeta);
-        for (var i = 0; i < allFolders.length; i++) {
-            allFolders[i].order = i;
+        if (targetMeta.type !== 'folder') return;
+
+        if (position === 'into') {
+            // Drop folder INTO another folder (nesting)
+            if (targetMeta.isDefault) return;
+            // Prevent circular reference
+            if (isFolderDescendant(metaList, dragId, targetId)) {
+                showToast('⚠️ 自分自身の中には移動できません');
+                return;
+            }
+            dragMeta.parentFolderId = targetId;
+            // Expand the target folder
+            var cs = getCollapseState();
+            cs[targetId] = false;
+            setCollapseState(cs);
+        } else {
+            // Reorder: above or below among siblings with same parentFolderId
+            if (targetMeta.isDefault) return;
+            var sameParent = targetMeta.parentFolderId || null;
+            // Prevent circular reference when reparenting
+            if (sameParent !== (dragMeta.parentFolderId || null)) {
+                if (isFolderDescendant(metaList, dragId, targetId)) {
+                    showToast('⚠️ 自分自身の中には移動できません');
+                    return;
+                }
+            }
+            dragMeta.parentFolderId = sameParent;
+
+            var siblings = metaList.filter(function(m) {
+                return m.type === 'folder' && !m.isDefault && m.id !== dragId
+                    && (m.parentFolderId || null) === sameParent;
+            });
+            siblings.sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+            var targetIdx = -1;
+            for (var i = 0; i < siblings.length; i++) {
+                if (siblings[i].id === targetId) { targetIdx = i; break; }
+            }
+            if (targetIdx === -1) return;
+            if (position === 'below') targetIdx++;
+            siblings.splice(targetIdx, 0, dragMeta);
+            for (var i = 0; i < siblings.length; i++) {
+                siblings[i].order = i;
+            }
         }
     } else if (dragType === 'page') {
         if (position === 'into' && targetMeta.type === 'folder') {
@@ -560,7 +631,7 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             cs[targetId] = false;
             setCollapseState(cs);
         } else if (targetMeta.type === 'page') {
-            // Reorder page among siblings in same folder, or move to different folder
+            // Reorder page among siblings in same folder
             var targetFolderId = targetMeta.folderId;
             dragMeta.folderId = targetFolderId;
 
@@ -610,10 +681,12 @@ function showFolderContextMenu(folderId, anchorEl) {
     ctxMenuTargetMapId = folderId;
     var meta = findMetaById(folderId);
     var cm = document.getElementById('ctxMenuFolder');
-    // Hide rename and delete for 未分類
+    // Hide rename, add-subfolder, and delete for 未分類
     var renameItem = cm.querySelector('[data-action="folder-rename"]');
+    var addSubfolderItem = cm.querySelector('[data-action="folder-add-subfolder"]');
     var deleteItem = cm.querySelector('[data-action="folder-delete"]');
     if (renameItem) renameItem.style.display = (meta && meta.isDefault) ? 'none' : '';
+    if (addSubfolderItem) addSubfolderItem.style.display = (meta && meta.isDefault) ? 'none' : '';
     if (deleteItem) deleteItem.style.display = (meta && meta.isDefault) ? 'none' : '';
 
     var rect = anchorEl.getBoundingClientRect();
@@ -750,6 +823,35 @@ function createFolder() {
     }
 }
 
+function createSubFolder(parentFolderId) {
+    var metaList = getMetaList();
+    var newId = getNextMapId();
+    var now = nowISO();
+
+    // Get max order among sibling folders
+    var maxOrder = 0;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'folder' && !metaList[i].isDefault
+            && (metaList[i].parentFolderId || null) === (parentFolderId || null)
+            && (metaList[i].order || 0) >= maxOrder) {
+            maxOrder = (metaList[i].order || 0) + 1;
+        }
+    }
+
+    var meta = { id: newId, name: '新しいフォルダ', type: 'folder', parentFolderId: parentFolderId, order: maxOrder, createdAt: now, updatedAt: now };
+    metaList.push(meta);
+    saveMetaList(metaList);
+
+    // Expand parent folder
+    var cs = getCollapseState();
+    cs[parentFolderId] = false;
+    setCollapseState(cs);
+
+    renderMapList();
+    showToast('フォルダを作成しました');
+    setTimeout(function() { startInlineRename(newId); }, 200);
+}
+
 function deleteFolder(folderId) {
     var metaList = getMetaList();
     var folderMeta = findMetaById(folderId);
@@ -758,26 +860,65 @@ function deleteFolder(folderId) {
         return;
     }
 
-    var pagesInFolder = metaList.filter(function(m) { return m.type === 'page' && m.folderId === folderId; });
+    if (!confirm('このフォルダを削除しますか？\n中のページとサブフォルダも含めてすべて削除されます。')) return;
 
-    if (!confirm('このフォルダを削除しますか？\n中のページは「未分類」に移動されます。')) return;
+    // Collect all descendant folder IDs recursively
+    function collectDescendantFolderIds(id) {
+        var ids = [id];
+        for (var i = 0; i < metaList.length; i++) {
+            if (metaList[i].type === 'folder' && (metaList[i].parentFolderId || null) === (id || null)) {
+                ids = ids.concat(collectDescendantFolderIds(metaList[i].id));
+            }
+        }
+        return ids;
+    }
+    var allFolderIds = collectDescendantFolderIds(folderId);
+    var folderIdSet = {};
+    for (var i = 0; i < allFolderIds.length; i++) folderIdSet[allFolderIds[i]] = true;
 
-    // Move children pages to 未分類
+    // Remove pages in those folders
     var defFolderId = getDefaultFolderId(metaList);
+    var pagesToDelete = [];
     for (var i = 0; i < metaList.length; i++) {
-        if (metaList[i].type === 'page' && metaList[i].folderId === folderId) {
-            metaList[i].folderId = defFolderId;
+        if (metaList[i].type === 'page' && folderIdSet[metaList[i].folderId]) {
+            pagesToDelete.push(metaList[i].id);
         }
     }
 
-    // Remove folder from meta
-    var newMeta = metaList.filter(function(m) { return m.id !== folderId; });
-    saveMetaList(newMeta);
-    renderMapList();
-    showToast('🗑 フォルダを削除しました');
-    if (window._supa) {
-        window._supa.deleteFolder(folderId).catch(function(){});
+    // Delete page data from localStorage
+    for (var i = 0; i < pagesToDelete.length; i++) {
+        try { localStorage.removeItem(getMapDataKey(pagesToDelete[i])); } catch(e) {}
+        if (window._supa) window._supa.deleteMap(pagesToDelete[i]).catch(function(){});
     }
+
+    // Remove all affected folders and pages from meta
+    var newMeta = metaList.filter(function(m) {
+        if (folderIdSet[m.id]) return false;
+        if (m.type === 'page' && folderIdSet[m.folderId]) return false;
+        return true;
+    });
+
+    // If current map was deleted, switch to another
+    var needSwitch = (pagesToDelete.indexOf(currentMapId) !== -1);
+
+    saveMetaList(newMeta);
+
+    if (window._supa) {
+        for (var i = 0; i < allFolderIds.length; i++) {
+            window._supa.deleteFolder(allFolderIds[i]).catch(function(){});
+        }
+    }
+
+    if (needSwitch) {
+        var remainingPages = newMeta.filter(function(m) { return m.type === 'page'; });
+        remainingPages.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+        if (remainingPages.length > 0) {
+            switchToMap(remainingPages[0].id);
+        }
+    } else {
+        renderMapList();
+    }
+    showToast('🗑 フォルダを削除しました');
 }
 
 function switchToMap(mapId) {
@@ -973,6 +1114,7 @@ window.getMetaList = getMetaList;
 window.switchToMap = switchToMap;
 window.createNewMap = createNewMap;
 window.createFolder = createFolder;
+window.createSubFolder = createSubFolder;
 window.createPageInFolder = createPageInFolder;
 window.deleteFolder = deleteFolder;
 window.openRightSidebar = openRightSidebar;
