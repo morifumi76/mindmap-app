@@ -2,6 +2,7 @@
 // Initialization
 // ========================================
 
+var appInitialized = false;
 function init() {
     // Run migration from old storage format
     migrateIfNeeded();
@@ -45,12 +46,15 @@ function init() {
     updatePageTitle();
 
     saveState();
-    document.addEventListener('keydown', handleKeyDown);
-    initCanvasInteraction();
-    initZoomControl();
-    document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
-    document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
-    document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
+    if (!appInitialized) {
+        appInitialized = true;
+        document.addEventListener('keydown', handleKeyDown);
+        initCanvasInteraction();
+        initZoomControl();
+        document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+        document.getElementById('expandAllBtn').addEventListener('click', expandAllNodes);
+        document.getElementById('collapseAllBtn').addEventListener('click', collapseAllNodes);
+    }
 
     // Grey-out floating button
     var grayoutBtn = document.getElementById('grayoutFloatBtn');

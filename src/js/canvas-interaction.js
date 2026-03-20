@@ -198,7 +198,10 @@ function updateZoomDisplay() {
     if (inBtn) inBtn.disabled = viewState.zoom >= ZOOM_MAX;
 }
 
+var zoomControlInitialized = false;
 function initZoomControl() {
+    if (zoomControlInitialized) { updateZoomDisplay(); return; }
+    zoomControlInitialized = true;
     var outBtn = document.getElementById('zoomOutBtn');
     var inBtn = document.getElementById('zoomInBtn');
     if (outBtn) {
