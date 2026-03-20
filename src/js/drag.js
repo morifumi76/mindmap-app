@@ -91,10 +91,10 @@ function createDragGhost(nodeEl, clientX, clientY, count) {
         badge.textContent = count;
         ghost.appendChild(badge);
 
-        // ＋バッジ（複数選択時：赤丸の右上）
+        // ＋バッジ（複数選択時：赤丸に少し被せる）
         var plusBadge = document.createElement('span');
         plusBadge.className = 'drag-plus-badge';
-        plusBadge.style.cssText = 'position:absolute;top:-20px;right:-20px;background:#fff;color:#37352f;border-radius:50%;width:16px;height:16px;display:none;align-items:center;justify-content:center;font-size:10px;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3);z-index:2;';
+        plusBadge.style.cssText = 'position:absolute;top:-16px;right:-16px;background:#fff;color:#37352f;border-radius:50%;width:16px;height:16px;display:none;align-items:center;justify-content:center;font-size:10px;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3);z-index:2;';
         plusBadge.textContent = '+';
         ghost.appendChild(plusBadge);
     } else {
