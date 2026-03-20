@@ -41,7 +41,7 @@ function getLastActiveId() {
 function findMetaById(mapId) {
     var list = getMetaList();
     for (var i = 0; i < list.length; i++) {
-        if (list[i].id === mapId) return list[i];
+        if (String(list[i].id) === String(mapId)) return list[i];
     }
     return null;
 }
