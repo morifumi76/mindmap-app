@@ -266,10 +266,7 @@
     display: flex;
 }
 
-/* Page indentation (inside folder) */
-.map-item.page-item {
-    padding-left: 28px;
-}
+/* Page indentation – controlled by JS inline style (depth * 20px) */
 
 .map-item.default-folder {
     /* 未分類 folder cannot be dragged */
