@@ -18305,7 +18305,7 @@ function renderMapList() {
         subFoldersByParent[k] = regPart.concat(defPart);
     }
 
-    var isDndFolderEnabled = (sortMode !== 'alpha');
+    var isDndFolderEnabled = true; // Finder風：ソートモードに関わらず常にドラッグ可能
     var isDndPageEnabled = true;
 
     list.innerHTML = '';
@@ -18710,6 +18710,13 @@ function handleMapDrop(dragId, targetId, position, dragType) {
                 siblings[i].order = i;
             }
         }
+    }
+
+    // ドラッグで並び替えたらソートモードを手動に切り替える
+    if (getSortMode() === 'alpha') {
+        setSortMode('none');
+        var sortInput = document.getElementById('sortToggleInput');
+        if (sortInput) sortInput.checked = false;
     }
 
     saveMetaList(metaList);
