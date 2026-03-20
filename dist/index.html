@@ -15059,11 +15059,15 @@ ${suffix}`;
       const localId = nextId();
       folderLocalIds[f.id] = localId;
       setSupabaseFolderId(localId, f.id);
+    }
+    for (const f of folders) {
+      const localId = folderLocalIds[f.id];
       metaList.push({
         id: localId,
         name: f.name,
         type: "folder",
         order: f.sort_order || 0,
+        parentFolderId: f.parent_folder_id ? folderLocalIds[f.parent_folder_id] || null : null,
         createdAt: f.created_at,
         updatedAt: f.created_at,
         isDefault: f.name === "\u672A\u5206\u985E" ? true : void 0
@@ -15164,17 +15168,23 @@ ${suffix}`;
     await supabase.from("maps").delete().eq("id", uuid);
     localStorage.removeItem(MAP_KEY_PREFIX + localId);
   }
-  async function saveFolder(localId, name, sortOrder) {
+  async function saveFolder(localId, name, sortOrder, parentLocalId) {
     const user = await getCurrentUser();
     if (!user) return;
     const uuid = getSupabaseFolderId(localId);
+    const parentUuid = parentLocalId ? getSupabaseFolderId(parentLocalId) || null : null;
     if (uuid) {
-      await supabase.from("folders").update({ name, sort_order: sortOrder || 0 }).eq("id", uuid);
+      await supabase.from("folders").update({
+        name,
+        sort_order: sortOrder || 0,
+        parent_folder_id: parentUuid
+      }).eq("id", uuid);
     } else {
       const { data: newF, error } = await supabase.from("folders").insert({
         user_id: user.id,
         name,
-        sort_order: sortOrder || 0
+        sort_order: sortOrder || 0,
+        parent_folder_id: parentUuid
       }).select().single();
       if (error) throw error;
       setSupabaseFolderId(localId, newF.id);
@@ -15229,11 +15239,24 @@ ${suffix}`;
     }
     const folders = metaList.filter((m) => m.type === "folder");
     const pages = metaList.filter((m) => m.type === "page");
-    for (const f of folders) {
+    const folderMap = {};
+    folders.forEach((f) => folderMap[f.id] = f);
+    const sortedFolders = [];
+    const visited = /* @__PURE__ */ new Set();
+    function visitFolder(f) {
+      if (visited.has(f.id)) return;
+      visited.add(f.id);
+      if (f.parentFolderId && folderMap[f.parentFolderId]) visitFolder(folderMap[f.parentFolderId]);
+      sortedFolders.push(f);
+    }
+    folders.forEach((f) => visitFolder(f));
+    for (const f of sortedFolders) {
+      const parentUuid = f.parentFolderId ? getSupabaseFolderId(f.parentFolderId) || null : null;
       const { data: newF, error } = await supabase.from("folders").insert({
         user_id: user.id,
         name: f.name,
-        sort_order: f.order || 0
+        sort_order: f.order || 0,
+        parent_folder_id: parentUuid
       }).select().single();
       if (!error && newF) setSupabaseFolderId(f.id, newF.id);
     }
@@ -19010,6 +19033,10 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             var cs = getCollapseState();
             cs[targetId] = false;
             setCollapseState(cs);
+            // Supabase に親子関係を保存
+            if (window._supa) {
+                window._supa.saveFolder(dragId, dragMeta.name, dragMeta.order || 0, targetId).catch(function(){});
+            }
         } else {
             // Reorder: above or below among siblings with same parentFolderId
             if (targetMeta.isDefault) return;
@@ -19037,6 +19064,10 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             siblings.splice(targetIdx, 0, dragMeta);
             for (var i = 0; i < siblings.length; i++) {
                 siblings[i].order = i;
+            }
+            // Supabase に並び順・親フォルダを保存（階層が変わる場合も含む）
+            if (window._supa) {
+                window._supa.saveFolder(dragId, dragMeta.name, dragMeta.order || 0, sameParent || null).catch(function(){});
             }
         }
     } else if (dragType === 'page') {
@@ -19269,6 +19300,9 @@ function createSubFolder(parentFolderId) {
     renderMapList();
     showToast('フォルダを作成しました');
     setTimeout(function() { startInlineRename(newId); }, 200);
+    if (window._supa) {
+        window._supa.saveFolder(newId, '新しいフォルダ', maxOrder, parentFolderId).catch(function(){});
+    }
 }
 
 function deleteFolder(folderId) {

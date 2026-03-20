@@ -95,17 +95,23 @@ async function loadUserData() {
     let idCounter = 0;
     const nextId = () => ++idCounter;
 
-    // Process folders
+    // Process folders — 2パス方式で parentFolderId を正しく復元する
+    // Pass 1: 全フォルダに localId を採番し、UUID ↔ localId マップを作る
     const folderLocalIds = {}; // uuid → localId
     for (const f of folders) {
         const localId = nextId();
         folderLocalIds[f.id] = localId;
         setSupabaseFolderId(localId, f.id);
+    }
+    // Pass 2: parentFolderId を含めて metaList に追加
+    for (const f of folders) {
+        const localId = folderLocalIds[f.id];
         metaList.push({
             id: localId,
             name: f.name,
             type: 'folder',
             order: f.sort_order || 0,
+            parentFolderId: f.parent_folder_id ? (folderLocalIds[f.parent_folder_id] || null) : null,
             createdAt: f.created_at,
             updatedAt: f.created_at,
             isDefault: f.name === '未分類' ? true : undefined
@@ -206,18 +212,26 @@ async function deleteMap(localId) {
 }
 
 // ---- Save folder to Supabase ----
-async function saveFolder(localId, name, sortOrder) {
+async function saveFolder(localId, name, sortOrder, parentLocalId) {
     const user = await getCurrentUser();
     if (!user) return;
 
     const uuid = getSupabaseFolderId(localId);
+    // parentLocalId が null/undefined の場合は null を明示的に送る
+    const parentUuid = parentLocalId ? (getSupabaseFolderId(parentLocalId) || null) : null;
+
     if (uuid) {
-        await supabase.from('folders').update({ name, sort_order: sortOrder || 0 }).eq('id', uuid);
+        await supabase.from('folders').update({
+            name,
+            sort_order: sortOrder || 0,
+            parent_folder_id: parentUuid
+        }).eq('id', uuid);
     } else {
         const { data: newF, error } = await supabase.from('folders').insert({
             user_id: user.id,
             name,
-            sort_order: sortOrder || 0
+            sort_order: sortOrder || 0,
+            parent_folder_id: parentUuid
         }).select().single();
         if (error) throw error;
         setSupabaseFolderId(localId, newF.id);
@@ -286,11 +300,26 @@ async function migrateFromLocalStorage() {
     const folders = metaList.filter(m => m.type === 'folder');
     const pages   = metaList.filter(m => m.type === 'page');
 
-    for (const f of folders) {
+    // 親フォルダが子より先に登録されるようトポロジカルソート
+    const folderMap = {};
+    folders.forEach(f => folderMap[f.id] = f);
+    const sortedFolders = [];
+    const visited = new Set();
+    function visitFolder(f) {
+        if (visited.has(f.id)) return;
+        visited.add(f.id);
+        if (f.parentFolderId && folderMap[f.parentFolderId]) visitFolder(folderMap[f.parentFolderId]);
+        sortedFolders.push(f);
+    }
+    folders.forEach(f => visitFolder(f));
+
+    for (const f of sortedFolders) {
+        const parentUuid = f.parentFolderId ? (getSupabaseFolderId(f.parentFolderId) || null) : null;
         const { data: newF, error } = await supabase.from('folders').insert({
             user_id: user.id,
             name: f.name,
-            sort_order: f.order || 0
+            sort_order: f.order || 0,
+            parent_folder_id: parentUuid
         }).select().single();
         if (!error && newF) setSupabaseFolderId(f.id, newF.id);
     }

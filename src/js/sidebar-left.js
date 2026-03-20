@@ -794,6 +794,10 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             var cs = getCollapseState();
             cs[targetId] = false;
             setCollapseState(cs);
+            // Supabase に親子関係を保存
+            if (window._supa) {
+                window._supa.saveFolder(dragId, dragMeta.name, dragMeta.order || 0, targetId).catch(function(){});
+            }
         } else {
             // Reorder: above or below among siblings with same parentFolderId
             if (targetMeta.isDefault) return;
@@ -821,6 +825,10 @@ function handleMapDrop(dragId, targetId, position, dragType) {
             siblings.splice(targetIdx, 0, dragMeta);
             for (var i = 0; i < siblings.length; i++) {
                 siblings[i].order = i;
+            }
+            // Supabase に並び順・親フォルダを保存（階層が変わる場合も含む）
+            if (window._supa) {
+                window._supa.saveFolder(dragId, dragMeta.name, dragMeta.order || 0, sameParent || null).catch(function(){});
             }
         }
     } else if (dragType === 'page') {
@@ -1053,6 +1061,9 @@ function createSubFolder(parentFolderId) {
     renderMapList();
     showToast('フォルダを作成しました');
     setTimeout(function() { startInlineRename(newId); }, 200);
+    if (window._supa) {
+        window._supa.saveFolder(newId, '新しいフォルダ', maxOrder, parentFolderId).catch(function(){});
+    }
 }
 
 function deleteFolder(folderId) {
