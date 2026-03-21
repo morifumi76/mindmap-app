@@ -69,6 +69,12 @@ function handleKeyDown(e) {
         return;
     }
 
+    // If focus is on a sidebar list item, let the sidebar handle arrow keys
+    var leftSidebar = document.getElementById('leftSidebar');
+    if (leftSidebar && leftSidebar.contains(activeEl) && activeEl.classList.contains('map-item')) {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') return;
+    }
+
     // While editing
     if (editingNodeId) {
         // IME入力中（ローマ字→日本語変換）のキーは無視する

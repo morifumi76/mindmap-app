@@ -164,24 +164,18 @@ function initLeftSidebar() {
         }
     });
 
-    // Arrow key navigation in map list
-    document.getElementById('mapList').addEventListener('keydown', function(e) {
+    // Arrow key navigation – document level so it works even after DOM rebuild
+    document.addEventListener('keydown', function(e) {
         if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        var leftSidebar = document.getElementById('leftSidebar');
+        if (!leftSidebar || !leftSidebar.contains(document.activeElement)) return;
+        if (!document.activeElement.classList.contains('map-item')) return;
         e.preventDefault();
+
         var items = Array.from(document.querySelectorAll('#mapList .map-item'));
         if (items.length === 0) return;
 
-        // Find currently focused item
-        var currentIndex = -1;
-        for (var i = 0; i < items.length; i++) {
-            if (items[i] === document.activeElement) { currentIndex = i; break; }
-        }
-        // Fall back to last selected item
-        if (currentIndex === -1 && sidebarLastSelectedId) {
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].dataset.mapId === sidebarLastSelectedId) { currentIndex = i; break; }
-            }
-        }
+        var currentIndex = items.indexOf(document.activeElement);
 
         var nextIndex;
         if (e.key === 'ArrowDown') {
@@ -189,22 +183,27 @@ function initLeftSidebar() {
         } else {
             nextIndex = currentIndex > 0 ? currentIndex - 1 : 0;
         }
-        if (nextIndex === currentIndex && currentIndex !== -1) return;
+        if (nextIndex === currentIndex) return;
 
         var nextItem = items[nextIndex];
-        nextItem.focus();
-
         var nextId = nextItem.dataset.mapId;
+
         clearSidebarSelection();
         sidebarSelectedIds.add(nextId);
         sidebarLastSelectedId = nextId;
         sidebarAnchorId = nextId;
         updateSidebarSelectionDisplay();
 
-        // ページなら自動でマップ切替
         var meta = findMetaById(nextId);
         if (meta && meta.type === 'page') {
             switchToMap(meta.id);
+            // switchToMap が renderMapList でDOMを再構築するので次フレームでフォーカス復元
+            setTimeout(function() {
+                var newEl = document.querySelector('#mapList .map-item[data-map-id="' + nextId + '"]');
+                if (newEl) newEl.focus({ preventScroll: true });
+            }, 0);
+        } else {
+            nextItem.focus({ preventScroll: true });
         }
     });
 
@@ -614,6 +613,11 @@ function createPageElement(page, isActive, isDndEnabled, depth) {
             sidebarAnchorId = String(pageId);
             updateSidebarSelectionDisplay();
             switchToMap(pageId);
+            // renderMapList がDOMを再構築するため、新しい要素にフォーカスを戻す
+            setTimeout(function() {
+                var el = document.querySelector('#mapList .map-item[data-map-id="' + pageId + '"]');
+                if (el) el.focus({ preventScroll: true });
+            }, 0);
         });
 
         menuBtnEl.addEventListener('click', function(e) {
