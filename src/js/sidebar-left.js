@@ -164,6 +164,50 @@ function initLeftSidebar() {
         }
     });
 
+    // Arrow key navigation in map list
+    document.getElementById('mapList').addEventListener('keydown', function(e) {
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        e.preventDefault();
+        var items = Array.from(document.querySelectorAll('#mapList .map-item'));
+        if (items.length === 0) return;
+
+        // Find currently focused item
+        var currentIndex = -1;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i] === document.activeElement) { currentIndex = i; break; }
+        }
+        // Fall back to last selected item
+        if (currentIndex === -1 && sidebarLastSelectedId) {
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].dataset.mapId === sidebarLastSelectedId) { currentIndex = i; break; }
+            }
+        }
+
+        var nextIndex;
+        if (e.key === 'ArrowDown') {
+            nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : currentIndex;
+        } else {
+            nextIndex = currentIndex > 0 ? currentIndex - 1 : 0;
+        }
+        if (nextIndex === currentIndex && currentIndex !== -1) return;
+
+        var nextItem = items[nextIndex];
+        nextItem.focus();
+
+        var nextId = nextItem.dataset.mapId;
+        clearSidebarSelection();
+        sidebarSelectedIds.add(nextId);
+        sidebarLastSelectedId = nextId;
+        sidebarAnchorId = nextId;
+        updateSidebarSelectionDisplay();
+
+        // ページなら自動でマップ切替
+        var meta = findMetaById(nextId);
+        if (meta && meta.type === 'page') {
+            switchToMap(meta.id);
+        }
+    });
+
     // Right-click on map list empty area to create folder
     document.getElementById('mapList').addEventListener('contextmenu', function(e) {
         // Only trigger if clicking on the list background itself
@@ -336,6 +380,7 @@ function createFolderElement(folder, hasPages, isCollapsed, isDndEnabled, depth,
     item.dataset.itemType = 'folder';
     item.dataset.isDefault = folder.isDefault ? '1' : '';
     item.style.paddingLeft = (12 + depth * 20) + 'px';
+    item.tabIndex = 0;
 
     if (isDndEnabled && !folder.isDefault) {
         item.draggable = true;
@@ -512,6 +557,7 @@ function createPageElement(page, isActive, isDndEnabled, depth) {
     item.dataset.itemType = 'page';
     item.dataset.folderId = page.folderId || '';
     item.style.paddingLeft = (12 + depth * 20) + 'px';
+    item.tabIndex = 0;
 
     if (isDndEnabled) {
         item.draggable = true;
@@ -591,7 +637,7 @@ function createPageElement(page, isActive, isDndEnabled, depth) {
                 mapDragState.draggingId = pageId;
                 mapDragState.draggingType = 'page';
                 // 複数選択中なら全選択ページをまとめてドラッグ
-                if (sidebarSelectedIds.size > 1 && sidebarSelectedIds.has(pageId)) {
+                if (sidebarSelectedIds.size > 1 && sidebarSelectedIds.has(String(pageId))) {
                     var allIds = [];
                     sidebarSelectedIds.forEach(function(id) { allIds.push(id); });
                     mapDragState.draggingIds = allIds;

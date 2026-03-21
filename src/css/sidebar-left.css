@@ -166,6 +166,11 @@
     background: rgba(0,0,0,0.03);
 }
 
+.map-item:focus {
+    outline: none;
+    background: rgba(0,0,0,0.04);
+}
+
 .map-item.active {
     background: rgba(0,0,0,0.06);
 }
