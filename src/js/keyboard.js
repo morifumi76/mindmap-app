@@ -73,6 +73,9 @@ function handleKeyDown(e) {
     if (window.sidebarNavigationMode) {
         var _sbKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'F2', 'Delete', 'Backspace'];
         if (_sbKeys.indexOf(e.key) !== -1) return;
+        var _isMacSB = /Mac/.test(navigator.platform);
+        var _cmdSB = _isMacSB ? e.metaKey : e.ctrlKey;
+        if (_cmdSB && ['c','C','v','V','x','X','z','Z','y','Y'].indexOf(e.key) !== -1) return;
     }
 
     // While editing

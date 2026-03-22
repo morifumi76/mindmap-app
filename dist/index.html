@@ -17394,6 +17394,9 @@ function handleKeyDown(e) {
     if (window.sidebarNavigationMode) {
         var _sbKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'F2', 'Delete', 'Backspace'];
         if (_sbKeys.indexOf(e.key) !== -1) return;
+        var _isMacSB = /Mac/.test(navigator.platform);
+        var _cmdSB = _isMacSB ? e.metaKey : e.ctrlKey;
+        if (_cmdSB && ['c','C','v','V','x','X','z','Z','y','Y'].indexOf(e.key) !== -1) return;
     }
 
     // While editing
@@ -18267,6 +18270,15 @@ var sidebarAnchorId = null;
 // Flag: true while keyboard focus is logically "inside" the sidebar list
 window.sidebarNavigationMode = false;
 
+// Clipboard for sidebar copy/paste/cut
+var sidebarClipboard = null; // { mode: 'copy'|'cut', ids: [] }
+
+
+// Undo/Redo history (metaList snapshots)
+var sidebarHistory = [];
+var sidebarHistoryPos = -1;
+var SIDEBAR_HISTORY_MAX = 30;
+
 var LEFT_SIDEBAR_OPEN_MIN = 200;
 var LEFT_SIDEBAR_DEFAULT = 240;
 var LEFT_SIDEBAR_KEY = 'mindmap_left_sidebar_width';
@@ -18274,9 +18286,159 @@ var leftSidebarIsOpen = false;
 var leftSidebarPeekTimeout = null;
 var leftSidebarInitialized = false;
 
+// ========================================
+// Sidebar Clipboard & Undo/Redo
+// ========================================
+
+function sidebarPushHistory() {
+    if (sidebarHistoryPos < sidebarHistory.length - 1) {
+        sidebarHistory = sidebarHistory.slice(0, sidebarHistoryPos + 1);
+    }
+    sidebarHistory.push(JSON.stringify(getMetaList()));
+    if (sidebarHistory.length > SIDEBAR_HISTORY_MAX) sidebarHistory.shift();
+    sidebarHistoryPos = sidebarHistory.length - 1;
+}
+
+function sidebarUndo() {
+    if (sidebarHistoryPos <= 0) { showToast('これ以上戻せません'); return; }
+    sidebarHistoryPos--;
+    var snapshot = JSON.parse(sidebarHistory[sidebarHistoryPos]);
+    saveMetaList(snapshot);
+    var meta = findMetaById(currentMapId);
+    if (!meta) {
+        var pages = snapshot.filter(function(m) { return m.type === 'page'; });
+        pages.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+        if (pages.length > 0) { window.sidebarNavigationMode = true; switchToMap(pages[0].id); return; }
+    }
+    renderMapList();
+    showToast('↩ 元に戻しました');
+}
+
+function sidebarRedo() {
+    if (sidebarHistoryPos >= sidebarHistory.length - 1) { showToast('やり直す操作がありません'); return; }
+    sidebarHistoryPos++;
+    var snapshot = JSON.parse(sidebarHistory[sidebarHistoryPos]);
+    saveMetaList(snapshot);
+    var meta = findMetaById(currentMapId);
+    if (!meta) {
+        var pages = snapshot.filter(function(m) { return m.type === 'page'; });
+        pages.sort(function(a, b) { return (b.updatedAt || '').localeCompare(a.updatedAt || ''); });
+        if (pages.length > 0) { window.sidebarNavigationMode = true; switchToMap(pages[0].id); return; }
+    }
+    renderMapList();
+    showToast('↪ やり直しました');
+}
+
+function sidebarCopyItems() {
+    if (sidebarSelectedIds.size === 0) { showToast('アイテムを選択してください'); return; }
+    var ids = [];
+    sidebarSelectedIds.forEach(function(id) { ids.push(id); });
+    sidebarClipboard = { mode: 'copy', ids: ids };
+    showToast('📋 ' + ids.length + '件をコピーしました');
+}
+
+function sidebarCutItems() {
+    if (sidebarSelectedIds.size === 0) { showToast('アイテムを選択してください'); return; }
+    var ids = [];
+    sidebarSelectedIds.forEach(function(id) {
+        var m = findMetaById(id);
+        if (m && m.type === 'page') ids.push(id);
+    });
+    if (ids.length === 0) { showToast('ページのみ切り取り可能です'); return; }
+    sidebarClipboard = { mode: 'cut', ids: ids };
+    showToast('✂️ ' + ids.length + '件を切り取りました');
+}
+
+function sidebarGetPasteDestFolder() {
+    var metaList = getMetaList();
+    if (sidebarLastSelectedId) {
+        var m = findMetaById(sidebarLastSelectedId);
+        if (m && m.type === 'folder') return m.id;
+        if (m && m.type === 'page') return m.folderId || getDefaultFolderId(metaList);
+    }
+    return getDefaultFolderId(metaList);
+}
+
+// ページを指定フォルダへ複製（コピー先フォルダを指定可能なduplicateMap）
+function duplicateMapToFolder(srcId, destFolderId) {
+    var srcMeta = findMetaById(srcId);
+    if (!srcMeta || srcMeta.type !== 'page') return;
+    var srcData = loadMapData(srcMeta.id);
+    if (!srcData) return;
+
+    var newId = getNextMapId();
+    var now = nowISO();
+    var metaList = getMetaList();
+    var maxOrder = 0;
+    for (var i = 0; i < metaList.length; i++) {
+        if (metaList[i].type === 'page' && metaList[i].folderId === destFolderId
+            && (metaList[i].order || 0) >= maxOrder) {
+            maxOrder = (metaList[i].order || 0) + 1;
+        }
+    }
+    var newMeta = { id: newId, name: srcMeta.name + ' のコピー', type: 'page',
+                    folderId: destFolderId, order: maxOrder, createdAt: now, updatedAt: now };
+    metaList.push(newMeta);
+    saveMetaList(metaList);
+    try { localStorage.setItem(getMapDataKey(newId), JSON.stringify(deepClone(srcData))); } catch(e) {}
+    if (window._supa) window._supa.saveMap(newId, newMeta.name, srcData, destFolderId).catch(function(){});
+    return newId;
+}
+
+function sidebarPasteItems(moveMode) {
+    if (!sidebarClipboard || sidebarClipboard.ids.length === 0) {
+        showToast('コピーしたアイテムがありません'); return;
+    }
+    var destFolderId = sidebarGetPasteDestFolder();
+    var isMove = moveMode || sidebarClipboard.mode === 'cut';
+
+    sidebarPushHistory();
+
+    if (!isMove) {
+        // 複製
+        var count = 0;
+        for (var i = 0; i < sidebarClipboard.ids.length; i++) {
+            var newId = duplicateMapToFolder(sidebarClipboard.ids[i], destFolderId);
+            if (newId) count++;
+        }
+        renderMapList();
+        showToast('📑 ' + count + '件を複製しました');
+    } else {
+        // 移動
+        var metaList = getMetaList();
+        var count = 0;
+        for (var i = 0; i < sidebarClipboard.ids.length; i++) {
+            var sid = sidebarClipboard.ids[i];
+            for (var j = 0; j < metaList.length; j++) {
+                if (String(metaList[j].id) === String(sid) && metaList[j].type === 'page') {
+                    if (String(metaList[j].folderId) === String(destFolderId)) break;
+                    metaList[j].folderId = destFolderId;
+                    var pagesInDest = metaList.filter(function(m) {
+                        return m.type === 'page' && String(m.folderId) === String(destFolderId);
+                    });
+                    metaList[j].order = pagesInDest.length > 0
+                        ? Math.max.apply(null, pagesInDest.map(function(m) { return m.order || 0; })) + 1 : 0;
+                    if (window._supa) {
+                        var pageData = loadMapData(metaList[j].id);
+                        window._supa.saveMap(metaList[j].id, metaList[j].name, pageData, destFolderId).catch(function(){});
+                    }
+                    count++;
+                    break;
+                }
+            }
+        }
+        saveMetaList(metaList);
+        sidebarClipboard = null;
+        renderMapList();
+        showToast('📁 ' + count + '件を移動しました');
+    }
+}
+
 function initLeftSidebar() {
     if (leftSidebarInitialized) return;
     leftSidebarInitialized = true;
+    // 初期状態を履歴に記録（Undoの起点）
+    setTimeout(function() { sidebarPushHistory(); }, 0);
     var sidebar = document.getElementById('leftSidebar');
     var handle = document.getElementById('leftSidebarResizeHandle');
     var hoverZone = document.getElementById('leftSidebarHoverZone');
@@ -18442,6 +18604,9 @@ function initLeftSidebar() {
 
     document.addEventListener('keydown', function(e) {
         if (!window.sidebarNavigationMode) return;
+        // リネーム入力中はこのリスナーを無視（Enter確定後の再発火を防ぐ）
+        var _activeEl = document.activeElement;
+        if (_activeEl && _activeEl.classList.contains('map-item-rename-input')) return;
 
         var sbIsMac = /Mac/.test(navigator.platform);
         var sbCmd   = sbIsMac ? e.metaKey : e.ctrlKey;
@@ -18453,8 +18618,35 @@ function initLeftSidebar() {
         // Mac: Cmd+Backspace=delete, Win: Delete (no modifier)=delete
         var isDelete    = (sbIsMac && sbCmd && e.key === 'Backspace') ||
                           (!sbIsMac && e.key === 'Delete' && !sbCmd && !e.shiftKey && !e.altKey);
-        if (!isVertical && !isHorizontal && !isRename && !isDelete) return;
+        var isCopy      = sbCmd && !e.shiftKey && !e.altKey && (e.key === 'c' || e.key === 'C');
+        var isCut       = sbCmd && !e.shiftKey && !e.altKey && (e.key === 'x' || e.key === 'X');
+        var isPaste     = sbCmd && !e.shiftKey && !e.altKey && (e.key === 'v' || e.key === 'V');
+        var isMovePaste = sbIsMac && sbCmd && e.altKey && (e.key === 'v' || e.key === 'V');
+        var isUndo      = sbCmd && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z');
+        var isRedo      = (sbCmd && e.shiftKey && (e.key === 'z' || e.key === 'Z')) ||
+                          (!sbIsMac && sbCmd && (e.key === 'y' || e.key === 'Y'));
+
+        if (!isVertical && !isHorizontal && !isRename && !isDelete &&
+            !isCopy && !isCut && !isPaste && !isMovePaste && !isUndo && !isRedo) return;
         e.preventDefault();
+
+        // ── Undo ────────────────────────────────────────────────────────────
+        if (isUndo) { sidebarUndo(); return; }
+
+        // ── Redo ────────────────────────────────────────────────────────────
+        if (isRedo) { sidebarRedo(); return; }
+
+        // ── コピー（Cmd+C / Ctrl+C）─────────────────────────────────────────
+        if (isCopy) { sidebarCopyItems(); return; }
+
+        // ── 切り取り（Win: Ctrl+X）──────────────────────────────────────────
+        if (isCut) { sidebarCutItems(); return; }
+
+        // ── 貼り付け（Cmd+V=複製 / Cmd+Option+V=移動 / Win Ctrl+V=cut時は移動）─
+        if (isPaste || isMovePaste) {
+            sidebarPasteItems(isMovePaste);
+            return;
+        }
 
         // ── リネーム（Mac: Enter / Win: F2）──────────────────────────────────
         if (isRename) {
@@ -19027,7 +19219,7 @@ function createPageElement(page, isActive, isDndEnabled, depth) {
             itemEl.addEventListener('dragstart', function(e) {
                 e.dataTransfer.setData('text/plain', String(pageId));
                 e.dataTransfer.setData('item-type', 'page');
-                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.effectAllowed = 'copyMove';
                 mapDragState.draggingId = pageId;
                 mapDragState.draggingType = 'page';
                 // 複数選択中なら全選択ページをまとめてドラッグ
@@ -19815,7 +20007,7 @@ function startInlineRename(mapId) {
             var metaList = getMetaList();
             var savedMeta = null;
             for (var i = 0; i < metaList.length; i++) {
-                if (metaList[i].id === mapId) {
+                if (String(metaList[i].id) === String(mapId)) {
                     metaList[i].name = newName;
                     metaList[i].updatedAt = nowISO();
                     savedMeta = metaList[i];
