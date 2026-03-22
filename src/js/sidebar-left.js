@@ -1237,6 +1237,15 @@ function handleMapDrop(dragId, targetId, position, dragType) {
     }
 
     saveMetaList(metaList);
+
+    // ページ移動後に Supabase へ同期（フォルダ変更・並び順変更どちらも対象）
+    if (window._supa && dragType === 'page' && dragMeta) {
+        var _movedData = loadMapData(dragMeta.id);
+        if (_movedData) {
+            window._supa.saveMap(dragMeta.id, dragMeta.name, _movedData, dragMeta.folderId).catch(function(){});
+        }
+    }
+
     renderMapList();
 }
 
